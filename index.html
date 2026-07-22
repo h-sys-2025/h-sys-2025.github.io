@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>hamza — lowlevel dev</title>
+<link rel="icon" href="portrait.jpg" type="image/jpeg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -21,6 +22,14 @@ body {
   max-width: 640px;
   margin: 0 auto;
   padding: 80px 24px 60px;
+}
+.portrait {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  margin-bottom: 24px;
 }
 h1 {
   font-family: 'Instrument Serif', Georgia, serif;
@@ -87,7 +96,7 @@ hr {
 </head>
 <body>
 <div class="container">
-  <h1>hamza</h1>
+  <img class="portrait" src="portrait.jpg" alt="hamza">
   <div class="tagline">lowlevel dev &middot; recreational programmer</div>
 
   <p>

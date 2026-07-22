@@ -1,2 +1,117 @@
-Hi
-Hello there!
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>hamza — lowlevel dev</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #2c2c2c;
+  background: #faf8f5;
+  -webkit-font-smoothing: antialiased;
+}
+.container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 80px 24px 60px;
+}
+h1 {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: 3rem;
+  font-weight: 400;
+  line-height: 1.15;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+.tagline {
+  font-size: 1rem;
+  font-weight: 400;
+  color: #888;
+  margin-bottom: 40px;
+}
+p { margin-bottom: 1.2em; }
+a {
+  color: #1a1a1a;
+  text-decoration: none;
+  border-bottom: 1px solid #d4d4d4;
+  transition: border-color .2s;
+}
+a:hover { border-color: #1a1a1a; }
+.section-title {
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #aaa;
+  margin-bottom: 16px;
+}
+.project { margin-bottom: 20px; }
+.project-name {
+  font-weight: 500;
+  font-size: 1rem;
+  color: #1a1a1a;
+  display: inline-block;
+  margin-bottom: 2px;
+}
+.project p {
+  font-size: .9rem;
+  color: #666;
+  margin-bottom: 0;
+}
+hr {
+  border: none;
+  border-top: 1px solid #eee;
+  margin: 40px 0;
+}
+.footer {
+  font-size: .85rem;
+  color: #aaa;
+}
+.footer a {
+  color: #888;
+  border-color: #e0e0e0;
+}
+.footer a:hover { border-color: #888; }
+@media (max-width: 480px) {
+  .container { padding: 48px 20px 40px; }
+  h1 { font-size: 2.4rem; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>hamza</h1>
+  <div class="tagline">lowlevel dev &middot; recreational programmer</div>
+
+  <p>
+    I like building things close to the metal&mdash;C, V, and whatever else
+    lets me understand what's really going on. No vibe coding here.
+  </p>
+
+  <div class="section-title">projects</div>
+
+  <div class="project">
+    <a class="project-name" href="https://github.com/h-sys-2025/polymorphile" target="_blank">polymorphile</a>
+    <p>polymorphism in C. exploring dynamic dispatch and generic patterns without a runtime.</p>
+  </div>
+
+  <div class="project">
+    <a class="project-name" href="https://github.com/h-sys-2025/side-projects" target="_blank">side-projects</a>
+    <p>a collection of recreational programming experiments&mdash;AoC solvers, tokenizers, markov chains, encryption toys, and a custom project manager called <em>mingle</em>.</p>
+  </div>
+
+  <hr>
+
+  <div class="footer">
+    <a href="https://github.com/h-sys-2025" target="_blank">github.com/h-sys-2025</a>
+  </div>
+</div>
+</body>
+</html>

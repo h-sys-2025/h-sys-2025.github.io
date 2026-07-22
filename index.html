@@ -61,18 +61,40 @@ a:hover { border-color: #1a1a1a; }
   color: #aaa;
   margin-bottom: 16px;
 }
-.project { margin-bottom: 20px; }
+.project {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #f0eeeb;
+}
+.project:last-of-type { border-bottom: none; }
+.project-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
 .project-name {
   font-weight: 500;
   font-size: 1rem;
   color: #1a1a1a;
-  display: inline-block;
-  margin-bottom: 2px;
 }
-.project p {
+.lang-tag {
+  font-size: .7rem;
+  font-weight: 500;
+  color: #999;
+  letter-spacing: .03em;
+}
+.project p, .project-desc {
   font-size: .9rem;
   color: #666;
-  margin-bottom: 0;
+  margin-bottom: 10px;
+}
+.project-screenshot {
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid #eee;
+  margin-top: 8px;
+  display: block;
 }
 hr {
   border: none;
@@ -96,24 +118,114 @@ hr {
 </head>
 <body>
 <div class="container">
+
   <img class="portrait" src="portrait.jpg" alt="hamza">
-  <div class="tagline">lowlevel dev &middot; recreational programmer</div>
+  <h1>hamza</h1>
+  <div class="tagline">lowlevel dev / recreational programmer</div>
 
   <p>
-    I like building things close to the metal&mdash;C, V, and whatever else
-    lets me understand what's really going on. No vibe coding here.
+    I like building things close to the metal&mdash;C, V, Go&mdash;whatever lets me
+    understand what's really going on. No vibe coding here.
   </p>
 
   <div class="section-title">projects</div>
 
   <div class="project">
-    <a class="project-name" href="https://github.com/h-sys-2025/polymorphile" target="_blank">polymorphile</a>
-    <p>polymorphism in C. exploring dynamic dispatch and generic patterns without a runtime.</p>
+    <div class="project-header">
+      <a class="project-name" href="https://github.com/h-sys-2025/gotermx" target="_blank">gotermx</a>
+      <span class="lang-tag">Go</span>
+    </div>
+    <p class="project-desc">
+      A terminal-based multi-pane IDE written in Go with tcell. Emacs-style UI without the
+      stupid keybindings. Multi-buffer editor, Dired file browser, PTY terminal splits, fuzzy
+      finder, LSP autocomplete, themes, Lua plugins, and AI chat. Basically a micro emacs
+      that actually makes sense.
+    </p>
+    <img class="project-screenshot" src="https://github.com/user-attachments/assets/9f9c5d4d-ac3d-4f15-b444-a1052708de47" alt="gotermx screenshot">
   </div>
 
   <div class="project">
-    <a class="project-name" href="https://github.com/h-sys-2025/side-projects" target="_blank">side-projects</a>
-    <p>a collection of recreational programming experiments&mdash;AoC solvers, tokenizers, markov chains, encryption toys, and a custom project manager called <em>mingle</em>.</p>
+    <div class="project-header">
+      <a class="project-name" href="https://github.com/h-sys-2025/AIML" target="_blank">AIML</a>
+      <span class="lang-tag">Go</span>
+    </div>
+    <p class="project-desc">
+      A small and lightweight portable DSML engine for local self-hosted LLMs. Agentic AI
+      powered by Ollama with tool-calling (shell, web search, file I/O, weather, HN), web UI,
+      streaming, TTS, and speech-to-text. Runs with models from 1.5b to 30b.
+    </p>
+  </div>
+
+  <div class="project">
+    <div class="project-header">
+      <a class="project-name" href="https://github.com/h-sys-2025/goagentgo" target="_blank">goagentgo / AgentDev</a>
+      <span class="lang-tag">Go</span>
+    </div>
+    <p class="project-desc">
+      A self-hosted agentic development platform for local Ollama models. Agents can
+      autonomously use web search, shell commands, file I/O, HTTP requests, and render
+      markdown/HTML. Split-pane IDE UI with SSE streaming and live tok/s display.
+    </p>
+  </div>
+
+  <div class="project">
+    <div class="project-header">
+      <a class="project-name" href="https://github.com/h-sys-2025/polymorphile" target="_blank">polymorphile</a>
+      <span class="lang-tag">C</span>
+    </div>
+    <p class="project-desc">
+      Polymorphism in C. Exploring dynamic dispatch, generic patterns, and OOP-like
+      constructs without a runtime. Recreational programming at its core.
+    </p>
+  </div>
+
+  <div class="project">
+    <div class="project-header">
+      <a class="project-name" href="https://github.com/h-sys-2025/side-projects" target="_blank">side-projects</a>
+      <span class="lang-tag">V / C</span>
+    </div>
+    <p class="project-desc">
+      A collection of recreational programming experiments. AoC solvers, tokenizers,
+      markov chains, encryption toys, higher-order functions, generics in C, a palindrome
+      checker, and a custom project manager called <em>mingle</em> with autodoc.
+      A strict no-vibe-coding zone &mdash; V language only (C also allowed).
+    </p>
+  </div>
+
+  <div class="project">
+    <div class="project-header">
+      <a class="project-name" href="https://github.com/h-sys-2025/markovchains" target="_blank">markovchains</a>
+      <span class="lang-tag">V</span>
+    </div>
+    <p class="project-desc">
+      A simple, lightweight library for building and experimenting with markov chains in V.
+      Supports text model building, text generation, and model serialization.
+    </p>
+  </div>
+
+  <div class="project">
+    <div class="project-header">
+      <a class="project-name" href="https://github.com/h-sys-2025/lilly" target="_blank">lilly</a>
+      <span class="lang-tag">V</span>
+    </div>
+    <p class="project-desc">
+      A batteries-included TUI editor designed as a Vim/Neovim alternative. Built-in
+      everything &mdash; no plugins needed. Vim motions, macros, syntax highlighting,
+      and more. Helix-like philosophy but with actual Vim keybindings.
+    </p>
+    <img class="project-screenshot" src="https://github.com/user-attachments/assets/047e5ea4-0062-499f-9026-29f98a47f4a3" alt="lilly screenshot">
+  </div>
+
+  <div class="project">
+    <div class="project-header">
+      <a class="project-name" href="https://github.com/h-sys-2025/lmv26" target="_blank">lmv26</a>
+      <span class="lang-tag">Go</span>
+    </div>
+    <p class="project-desc">
+      A lightweight baby Metasploit modular framework written in Go. Supports Python 3
+      and Bash modules with YAML-based metadata, interactive CLI, live output, and
+      variable argument passing. Almost totally useless &mdash; and that's the point.
+    </p>
   </div>
 
   <hr>
@@ -121,6 +233,7 @@ hr {
   <div class="footer">
     <a href="https://github.com/h-sys-2025" target="_blank">github.com/h-sys-2025</a>
   </div>
+
 </div>
 </body>
 </html>

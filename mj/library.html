@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Library - mj</title>
+<meta name="description" content="mj standard library modules, the bundled vendor-libs registry, and a quick reference to builtin methods.">
+<style>
+/* mj language website - shared stylesheet
+   down-to-earth, monospace, minimal color, light + dark theme */
+
+:root{
+  --font: ui-monospace, "Cascadia Code", "Consolas", "SFMono-Regular", Menlo, "Liberation Mono", monospace;
+
+  --bg:        #faf9f5;
+  --bg-raised: #f1efe6;
+  --bg-code:   #eeece2;
+  --border:    #d8d4c4;
+  --text:      #1d1c18;
+  --text-dim:  #5c584c;
+  --text-mute: #8a8574;
+  --accent:    #4b6a4f;
+  --accent-2:  #7a5230;
+  --link:      #3d5a41;
+  --tag-bg:    #e4e0cf;
+}
+
+html[data-theme="dark"]{
+  --bg:        #16150f;
+  --bg-raised: #201e17;
+  --bg-code:   #1c1b14;
+  --border:    #3a382c;
+  --text:      #e9e4d6;
+  --text-dim:  #b3ac97;
+  --text-mute: #837c6a;
+  --accent:    #7fae84;
+  --accent-2:  #c98f5c;
+  --link:      #8dbb8f;
+  --tag-bg:    #2a2820;
+}
+
+*{ box-sizing: border-box; }
+
+html{ -webkit-text-size-adjust: 100%; }
+
+body{
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.65;
+  transition: background .15s ease, color .15s ease;
+}
+
+.wrap{
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 22px;
+}
+
+a{ color: var(--link); text-decoration: none; border-bottom: 1px solid transparent; }
+a:hover{ border-bottom-color: var(--link); }
+
+h1, h2, h3, h4{
+  font-family: var(--font);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+h1{ font-size: 1.9rem; margin: 0 0 10px; }
+h2{ font-size: 1.35rem; margin: 2.4em 0 .6em; padding-top: .6em; border-top: 1px solid var(--border); }
+h2:first-of-type{ border-top: none; padding-top: 0; margin-top: 1.2em; }
+h3{ font-size: 1.05rem; margin: 1.6em 0 .5em; color: var(--text); }
+h4{ font-size: .95rem; margin: 1.2em 0 .4em; color: var(--text-dim); }
+
+p{ margin: 0 0 1em; color: var(--text); }
+.dim{ color: var(--text-dim); }
+.mute{ color: var(--text-mute); }
+
+/* header */
+.site-header{
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.header-inner{
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 22px;
+}
+.logo{
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.logo:hover{ border-color: var(--accent); }
+.site-header nav{
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+.site-header nav a{
+  color: var(--text-dim);
+  font-size: .92rem;
+  padding: 4px 0;
+}
+.site-header nav a.active{ color: var(--text); border-bottom-color: var(--accent); }
+.site-header nav a:hover{ color: var(--text); }
+
+#theme-toggle{
+  font-family: var(--font);
+  font-size: .82rem;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  padding: 5px 10px;
+  cursor: pointer;
+}
+#theme-toggle:hover{ color: var(--text); border-color: var(--accent); }
+
+/* layout */
+main{ padding: 40px 0 80px; }
+.page-head{ margin-bottom: 30px; }
+.page-head .kicker{
+  display: inline-block;
+  font-size: .78rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  margin-bottom: 14px;
+}
+
+/* hero */
+.hero{ padding: 30px 0 10px; }
+.hero h1{ font-size: 2.4rem; }
+.hero .lede{ font-size: 1.02rem; color: var(--text-dim); max-width: 62ch; }
+.hero .goal{ margin-top: 18px; color: var(--text-dim); }
+
+.btn-row{ display:flex; gap: 12px; margin: 24px 0 8px; flex-wrap: wrap; }
+.btn{
+  display: inline-block;
+  font-family: var(--font);
+  font-size: .9rem;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.btn:hover{ border-color: var(--accent); border-bottom-color: var(--accent); color: var(--accent); }
+.btn.primary{ background: var(--bg-raised); border-color: var(--text-dim); }
+.btn.primary:hover{ border-color: var(--accent); }
+
+/* code */
+pre{
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-size: .86rem;
+  line-height: 1.55;
+  margin: 0 0 1.2em;
+}
+code{
+  font-family: var(--font);
+  background: var(--bg-code);
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  font-size: .87em;
+}
+pre code{ background: none; border: none; padding: 0; }
+
+.code-comment{ color: var(--text-mute); }
+
+/* tables */
+table{
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.4em;
+  font-size: .89rem;
+}
+th, td{
+  border: 1px solid var(--border);
+  padding: 7px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+th{
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  font-weight: 700;
+  font-size: .82rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+tr:nth-child(even) td{ background: color-mix(in srgb, var(--bg-raised) 40%, transparent); }
+
+/* cards / grid */
+.grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+.card{
+  border: 1px solid var(--border);
+  padding: 16px;
+  background: var(--bg-raised);
+}
+.card h3{ margin-top: 0; }
+.card p{ color: var(--text-dim); font-size: .9rem; margin-bottom: 0; }
+.card a.stretch{ position: absolute; inset: 0; }
+.card{ position: relative; }
+
+/* lists */
+ul, ol{ padding-left: 1.3em; color: var(--text); }
+li{ margin: .3em 0; }
+
+/* footer */
+footer{
+  border-top: 1px solid var(--border);
+  padding: 26px 0 50px;
+  color: var(--text-mute);
+  font-size: .84rem;
+}
+footer a{ color: var(--text-dim); }
+footer .foot-row{ display:flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+/* toc / sidebar nav for docs */
+.doc-layout{
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 40px;
+}
+.doc-nav{
+  position: sticky;
+  top: 70px;
+  align-self: start;
+  font-size: .85rem;
+}
+.doc-nav a{
+  display: block;
+  padding: 4px 0;
+  color: var(--text-dim);
+  border-bottom: none;
+}
+.doc-nav a:hover, .doc-nav a.active{ color: var(--accent); }
+.doc-section{ margin-bottom: 3em; padding-bottom: .5em; border-bottom: 1px dashed var(--border); }
+.doc-section:last-child{ border-bottom: none; }
+
+@media (max-width: 760px){
+  .doc-layout{ grid-template-columns: 1fr; }
+  .doc-nav{ position: static; display:flex; flex-wrap:wrap; gap: 4px 14px; margin-bottom: 20px; }
+  .hero h1{ font-size: 1.9rem; }
+}
+
+/* badges/tags */
+.tag{
+  display: inline-block;
+  font-size: .74rem;
+  color: var(--text-dim);
+  background: var(--tag-bg);
+  border: 1px solid var(--border);
+  padding: 1px 7px;
+  margin: 0 6px 6px 0;
+}
+
+/* examples explorer */
+.ex-toolbar{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.ex-toolbar input[type=text]{
+  font-family: var(--font);
+  font-size: .88rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 7px 10px;
+  flex: 1;
+  min-width: 180px;
+}
+.ex-toolbar input[type=text]:focus{ outline: none; border-color: var(--accent); }
+.ex-status{ font-size: .82rem; color: var(--text-mute); margin-bottom: 18px; }
+
+.ex-group{ margin-bottom: 30px; }
+.ex-group-title{
+  font-size: .86rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-mute);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+}
+.ex-item{
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  background: var(--bg-raised);
+}
+.ex-item summary{
+  cursor: pointer;
+  padding: 9px 12px;
+  font-size: .89rem;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  list-style: none;
+}
+.ex-item summary::-webkit-details-marker{ display:none; }
+.ex-item summary .marker{ color: var(--text-mute); width: 1em; display:inline-block; }
+.ex-item[open] summary .marker::before{ content: "-"; }
+.ex-item:not([open]) summary .marker::before{ content: "+"; }
+.ex-item summary .fname{ color: var(--text); font-weight: 700; }
+.ex-item summary .fpath{ color: var(--text-mute); font-size: .82rem; }
+.ex-item .ex-body{ border-top: 1px solid var(--border); padding: 12px; }
+.ex-item .ex-body pre{ margin-bottom: 8px; max-height: 480px; }
+.ex-item .ex-src-link{ font-size: .8rem; color: var(--text-mute); }
+.ex-loading{ color: var(--text-mute); font-size: .85rem; padding: 8px 0; }
+
+.note-box{
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  padding: 12px 14px;
+  font-size: .88rem;
+  color: var(--text-dim);
+  margin: 0 0 1.4em;
+}
+
+</style>
+<script>
+// theme toggle, persisted in localStorage
+(function () {
+  var KEY = "mj-site-theme";
+  var root = document.documentElement;
+
+  function apply(theme) {
+    root.setAttribute("data-theme", theme);
+    var btn = document.getElementById("theme-toggle");
+    if (btn) btn.textContent = theme === "dark" ? "[ light ]" : "[ dark ]";
+  }
+
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  if (!saved) {
+    saved = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark" : "light";
+  }
+  apply(saved);
+
+  document.addEventListener("DOMContentLoaded", function () {
+    var btn = document.getElementById("theme-toggle");
+    if (!btn) return;
+    apply(root.getAttribute("data-theme") || saved);
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      apply(cur);
+      try { localStorage.setItem(KEY, cur); } catch (e) {}
+    });
+  });
+})();
+
+</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a href="index.html" class="logo">mj</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="docs.html">Docs</a>
+      <a href="learn.html">Learn</a>
+      <a href="examples.html">Examples</a>
+      <a href="library.html" class="active">Library</a>
+      <a href="install.html">Install</a>
+      <a href="https://github.com/h-sys-2025/mj" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+    <button id="theme-toggle" aria-label="Toggle theme">[ dark ]</button>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="page-head">
+      <span class="kicker">stdlib/ + vendor-libs/</span>
+      <h1>Library</h1>
+      <p class="dim">What ships with mj: a small standard library written partly in C and partly in mj itself, plus a bundled vendor registry of 23 small packages.</p>
+    </div>
+
+    <h2>Standard library (stdlib/)</h2>
+    <table>
+      <thead><tr><th>Module</th><th>File</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td>fs</td><td><code>stdlib/fs.mj</code></td><td>filesystem: list, read, write, current directory</td></tr>
+        <tr><td>json</td><td><code>stdlib/json.mj</code></td><td>JSON encode / decode</td></tr>
+        <tr><td>net</td><td><code>stdlib/net.mj</code></td><td>networking helpers</td></tr>
+        <tr><td>thread</td><td><code>stdlib/thread.mj</code></td><td>threads</td></tr>
+        <tr><td>web</td><td><code>stdlib/web.mj</code></td><td>HTTP helpers, backed by C</td></tr>
+        <tr><td>ffi</td><td><code>stdlib/ffi.mj</code></td><td>C interop glue</td></tr>
+        <tr><td>builtins</td><td><code>stdlib/builtins/</code></td><td>core native builtins (<code>builtins.c</code>, <code>builtins.h</code>, <code>builtins.mj</code>)</td></tr>
+        <tr><td>extern</td><td><code>stdlib/extern/</code></td><td><code>natives_table.inc</code> / <code>natives_body.inc</code>, the plumbing for registering new natives</td></tr>
+        <tr><td>extern_c</td><td><code>stdlib/extern_c/</code></td><td>C / C++ / Odin interop shims and <code>mj_api.h</code>, the embedding ABI</td></tr>
+      </tbody>
+    </table>
+
+    <h2>C plugins (stdlib/extern_c/), added 2026-08-17</h2>
+    <p class="dim">Five new plugin files, all using the same int64 ABI as <code>native ... from</code> / <code>cimport</code> / <code>cbind</code>.</p>
+    <table>
+      <thead><tr><th>Plugin</th><th>Covers</th><th>Extra link flags</th></tr></thead>
+      <tbody>
+        <tr><td><code>radix_utils.c</code></td><td>hex / octal / binary parse and format (<code>parse_hex</code>, <code>to_hex</code>, <code>parse_auto</code>, ...)</td><td>none</td></tr>
+        <tr><td><code>net_sockets.c</code></td><td>TCP / UDP sockets, packet buffers (<code>net_socket_tcp</code>, <code>net_send</code>, <code>net_recv</code>, ...)</td><td>none</td></tr>
+        <tr><td><code>pcap_lite.c</code></td><td>libpcap capture (<code>pcap_open_live_mj</code>, <code>pcap_next_mj</code>, ...)</td><td><code>-lpcap</code>, optional</td></tr>
+        <tr><td><code>sdl2_plug.c</code></td><td>SDL2 window / renderer (<code>sdl_init</code>, <code>sdl_create_window</code>, <code>sdl_fill_rect</code>, ...)</td><td><code>pkg-config --libs sdl2</code></td></tr>
+        <tr><td><code>raylib_plug.c</code></td><td>raylib window / drawing (<code>ray_init</code>, <code>ray_draw_rect</code>, <code>ray_draw_circle</code>, ...)</td><td><code>-lraylib -lGL ...</code></td></tr>
+      </tbody>
+    </table>
+    <div class="note-box">
+      The two new demo scripts that exercise these, <code>examples/demo_net.mj</code>
+      and <code>examples/demo_radix.mj</code>, currently load them from a path
+      that does not exist in the repository. Use
+      <code>stdlib/extern_c/net_sockets.c</code> and
+      <code>stdlib/extern_c/radix_utils.c</code> as the <code>native ... from</code>
+      path instead.
+    </div>
+
+    <h2>Vendor registry (vendor-libs/)</h2>
+    <p class="dim">23 folders live under <code>vendor-libs/</code>. 22 of them are listed in <code>docs/REGISTERY.md</code> at version 1.0.0; <code>viz</code> is present in the folder but not yet in that table.</p>
+    <table>
+      <thead><tr><th>Package</th><th>Version</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td><code>json</code></td><td>1.0.0</td><td>JSON parse</td></tr>
+        <tr><td><code>http</code></td><td>1.0.0</td><td>HTTP client</td></tr>
+        <tr><td><code>fs</code></td><td>1.0.0</td><td>filesystem</td></tr>
+        <tr><td><code>path</code></td><td>1.0.0</td><td>path utils</td></tr>
+        <tr><td><code>strings</code></td><td>1.0.0</td><td>string utils</td></tr>
+        <tr><td><code>math</code></td><td>1.0.0</td><td>integer math</td></tr>
+        <tr><td><code>time</code></td><td>1.0.0</td><td>clock / sleep</td></tr>
+        <tr><td><code>log</code></td><td>1.0.0</td><td>logging</td></tr>
+        <tr><td><code>env</code></td><td>1.0.0</td><td>env vars</td></tr>
+        <tr><td><code>flags</code></td><td>1.0.0</td><td>CLI flags</td></tr>
+        <tr><td><code>hash</code></td><td>1.0.0</td><td>FNV hash</td></tr>
+        <tr><td><code>uuid</code></td><td>1.0.0</td><td>ids</td></tr>
+        <tr><td><code>csv</code></td><td>1.0.0</td><td>CSV parse</td></tr>
+        <tr><td><code>regex</code></td><td>1.0.0</td><td>simple match</td></tr>
+        <tr><td><code>process</code></td><td>1.0.0</td><td>system / exit</td></tr>
+        <tr><td><code>channel</code></td><td>1.0.0</td><td>mailboxes</td></tr>
+        <tr><td><code>concurrent</code></td><td>1.0.0</td><td>async helpers</td></tr>
+        <tr><td><code>bitset</code></td><td>1.0.0</td><td>bit ops</td></tr>
+        <tr><td><code>encoding</code></td><td>1.0.0</td><td>hex</td></tr>
+        <tr><td><code>testing</code></td><td>1.0.0</td><td>tests</td></tr>
+        <tr><td><code>assert</code></td><td>1.0.0</td><td>assert</td></tr>
+        <tr><td><code>random</code></td><td>1.0.0</td><td>LCG RNG</td></tr>
+        <tr><td><code>viz</code></td><td class="mute">unlisted</td><td>present in vendor-libs/, not yet in the registry doc</td></tr>
+      </tbody>
+    </table>
+    <p class="dim">Every package folder carries a <code>lib.mj</code> and an <code>mjpkg.toml</code> manifest. Add one with <code>./mjpm.sh add &lt;name&gt;</code>.</p>
+
+    <h2>Builtin methods, quick reference</h2>
+    <p class="dim">UFCS-style: <code>value.method(args)</code>, working on strings, arrays, maps, ints, and f64. Full lists are on the <a href="docs.html#methods">Docs page</a>.</p>
+    <table>
+      <thead><tr><th>Category</th><th>A few of the methods</th></tr></thead>
+      <tbody>
+        <tr><td>Strings</td><td><code>trim</code>, <code>upper</code>, <code>lower</code>, <code>split</code>, <code>replace</code>, <code>contains</code>, <code>starts_with</code>, <code>pad_left</code>, <code>lines</code>, <code>capitalize</code></td></tr>
+        <tr><td>Arrays</td><td><code>push</code>, <code>pop</code>, <code>first</code>, <code>last</code>, <code>sum</code>, <code>slice</code>, <code>reverse</code>, <code>join</code>, <code>contains</code></td></tr>
+        <tr><td>Maps</td><td><code>get</code>, <code>set</code>, <code>has</code>, <code>keys</code>, <code>values</code>, <code>delete</code></td></tr>
+        <tr><td>Numbers</td><td><code>abs</code>, <code>floor</code>, <code>ceil</code>, <code>sqrt</code>, <code>clamp</code>, <code>is_even</code>, <code>to_string</code></td></tr>
+        <tr><td>Universal</td><td><code>type</code>, <code>to_string</code>, <code>len</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2>New builtins, 2026-08-17</h2>
+    <p class="dim">38 functions added to <code>stdlib/extern/natives_table.inc</code>, grouped by what they do:</p>
+    <table>
+      <thead><tr><th>Group</th><th>New functions</th></tr></thead>
+      <tbody>
+        <tr><td>Type checks</td><td><code>is_nil</code>, <code>is_num</code>, <code>is_str</code>, <code>is_array</code>, <code>is_map</code>, <code>is_bool</code>, <code>is_fn</code>, <code>is_even</code>, <code>is_odd</code></td></tr>
+        <tr><td>Array chaining</td><td><code>arr_rev</code>, <code>arr_sort</code>, <code>arr_take</code>, <code>arr_drop</code>, <code>arr_first</code>, <code>arr_last</code>, <code>arr_contains</code>, <code>arr_flatten</code>, <code>arr_zip</code>, <code>arr_enumerate</code>, <code>arr_any</code>, <code>arr_all</code>, <code>rev</code></td></tr>
+        <tr><td>Strings</td><td><code>pad_left</code>, <code>pad_right</code>, <code>str_reverse</code>, <code>str_chars</code>, <code>str_count</code>, <code>str_starts</code>, <code>str_ends</code>, <code>str_is_blank</code>, <code>str_is_empty</code></td></tr>
+        <tr><td>Maps</td><td><code>map_merge</code>, <code>map_size</code></td></tr>
+        <tr><td>Refs</td><td><code>ref_kind</code>, <code>ref_valid</code></td></tr>
+        <tr><td>Numbers / misc</td><td><code>clamp</code>, <code>sign</code>, <code>identity</code></td></tr>
+      </tbody>
+    </table>
+    <p class="dim">191 native functions in total, up from 153. See <a href="docs.html#methods">Docs</a> for the full method list and the <a href="index.html#whats-new">homepage</a> for the rest of this update.</p>
+
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <div>mj -- embeddable systems scripting language. Source on <a href="https://github.com/h-sys-2025/mj" target="_blank" rel="noopener">GitHub</a>.</div>
+    <div><a href="docs.html">Docs</a> | <a href="examples.html">Examples</a> | <a href="install.html">Install</a></div>
+  </div>
+</footer>
+
+</body>
+</html>

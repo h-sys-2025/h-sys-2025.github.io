@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docs - mj</title>
+<meta name="description" content="mj language documentation: control flow, errors, GC and ownership, methods, optimizations, ecosystem, registry, strings, and the disassembler.">
+<style>
+/* mj language website - shared stylesheet
+   down-to-earth, monospace, minimal color, light + dark theme */
+
+:root{
+  --font: ui-monospace, "Cascadia Code", "Consolas", "SFMono-Regular", Menlo, "Liberation Mono", monospace;
+
+  --bg:        #faf9f5;
+  --bg-raised: #f1efe6;
+  --bg-code:   #eeece2;
+  --border:    #d8d4c4;
+  --text:      #1d1c18;
+  --text-dim:  #5c584c;
+  --text-mute: #8a8574;
+  --accent:    #4b6a4f;
+  --accent-2:  #7a5230;
+  --link:      #3d5a41;
+  --tag-bg:    #e4e0cf;
+}
+
+html[data-theme="dark"]{
+  --bg:        #16150f;
+  --bg-raised: #201e17;
+  --bg-code:   #1c1b14;
+  --border:    #3a382c;
+  --text:      #e9e4d6;
+  --text-dim:  #b3ac97;
+  --text-mute: #837c6a;
+  --accent:    #7fae84;
+  --accent-2:  #c98f5c;
+  --link:      #8dbb8f;
+  --tag-bg:    #2a2820;
+}
+
+*{ box-sizing: border-box; }
+
+html{ -webkit-text-size-adjust: 100%; }
+
+body{
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.65;
+  transition: background .15s ease, color .15s ease;
+}
+
+.wrap{
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 22px;
+}
+
+a{ color: var(--link); text-decoration: none; border-bottom: 1px solid transparent; }
+a:hover{ border-bottom-color: var(--link); }
+
+h1, h2, h3, h4{
+  font-family: var(--font);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+h1{ font-size: 1.9rem; margin: 0 0 10px; }
+h2{ font-size: 1.35rem; margin: 2.4em 0 .6em; padding-top: .6em; border-top: 1px solid var(--border); }
+h2:first-of-type{ border-top: none; padding-top: 0; margin-top: 1.2em; }
+h3{ font-size: 1.05rem; margin: 1.6em 0 .5em; color: var(--text); }
+h4{ font-size: .95rem; margin: 1.2em 0 .4em; color: var(--text-dim); }
+
+p{ margin: 0 0 1em; color: var(--text); }
+.dim{ color: var(--text-dim); }
+.mute{ color: var(--text-mute); }
+
+/* header */
+.site-header{
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.header-inner{
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 22px;
+}
+.logo{
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.logo:hover{ border-color: var(--accent); }
+.site-header nav{
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+.site-header nav a{
+  color: var(--text-dim);
+  font-size: .92rem;
+  padding: 4px 0;
+}
+.site-header nav a.active{ color: var(--text); border-bottom-color: var(--accent); }
+.site-header nav a:hover{ color: var(--text); }
+
+#theme-toggle{
+  font-family: var(--font);
+  font-size: .82rem;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  padding: 5px 10px;
+  cursor: pointer;
+}
+#theme-toggle:hover{ color: var(--text); border-color: var(--accent); }
+
+/* layout */
+main{ padding: 40px 0 80px; }
+.page-head{ margin-bottom: 30px; }
+.page-head .kicker{
+  display: inline-block;
+  font-size: .78rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  margin-bottom: 14px;
+}
+
+/* hero */
+.hero{ padding: 30px 0 10px; }
+.hero h1{ font-size: 2.4rem; }
+.hero .lede{ font-size: 1.02rem; color: var(--text-dim); max-width: 62ch; }
+.hero .goal{ margin-top: 18px; color: var(--text-dim); }
+
+.btn-row{ display:flex; gap: 12px; margin: 24px 0 8px; flex-wrap: wrap; }
+.btn{
+  display: inline-block;
+  font-family: var(--font);
+  font-size: .9rem;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.btn:hover{ border-color: var(--accent); border-bottom-color: var(--accent); color: var(--accent); }
+.btn.primary{ background: var(--bg-raised); border-color: var(--text-dim); }
+.btn.primary:hover{ border-color: var(--accent); }
+
+/* code */
+pre{
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-size: .86rem;
+  line-height: 1.55;
+  margin: 0 0 1.2em;
+}
+code{
+  font-family: var(--font);
+  background: var(--bg-code);
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  font-size: .87em;
+}
+pre code{ background: none; border: none; padding: 0; }
+
+.code-comment{ color: var(--text-mute); }
+
+/* tables */
+table{
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.4em;
+  font-size: .89rem;
+}
+th, td{
+  border: 1px solid var(--border);
+  padding: 7px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+th{
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  font-weight: 700;
+  font-size: .82rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+tr:nth-child(even) td{ background: color-mix(in srgb, var(--bg-raised) 40%, transparent); }
+
+/* cards / grid */
+.grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+.card{
+  border: 1px solid var(--border);
+  padding: 16px;
+  background: var(--bg-raised);
+}
+.card h3{ margin-top: 0; }
+.card p{ color: var(--text-dim); font-size: .9rem; margin-bottom: 0; }
+.card a.stretch{ position: absolute; inset: 0; }
+.card{ position: relative; }
+
+/* lists */
+ul, ol{ padding-left: 1.3em; color: var(--text); }
+li{ margin: .3em 0; }
+
+/* footer */
+footer{
+  border-top: 1px solid var(--border);
+  padding: 26px 0 50px;
+  color: var(--text-mute);
+  font-size: .84rem;
+}
+footer a{ color: var(--text-dim); }
+footer .foot-row{ display:flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+/* toc / sidebar nav for docs */
+.doc-layout{
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 40px;
+}
+.doc-nav{
+  position: sticky;
+  top: 70px;
+  align-self: start;
+  font-size: .85rem;
+}
+.doc-nav a{
+  display: block;
+  padding: 4px 0;
+  color: var(--text-dim);
+  border-bottom: none;
+}
+.doc-nav a:hover, .doc-nav a.active{ color: var(--accent); }
+.doc-section{ margin-bottom: 3em; padding-bottom: .5em; border-bottom: 1px dashed var(--border); }
+.doc-section:last-child{ border-bottom: none; }
+
+@media (max-width: 760px){
+  .doc-layout{ grid-template-columns: 1fr; }
+  .doc-nav{ position: static; display:flex; flex-wrap:wrap; gap: 4px 14px; margin-bottom: 20px; }
+  .hero h1{ font-size: 1.9rem; }
+}
+
+/* badges/tags */
+.tag{
+  display: inline-block;
+  font-size: .74rem;
+  color: var(--text-dim);
+  background: var(--tag-bg);
+  border: 1px solid var(--border);
+  padding: 1px 7px;
+  margin: 0 6px 6px 0;
+}
+
+/* examples explorer */
+.ex-toolbar{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.ex-toolbar input[type=text]{
+  font-family: var(--font);
+  font-size: .88rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 7px 10px;
+  flex: 1;
+  min-width: 180px;
+}
+.ex-toolbar input[type=text]:focus{ outline: none; border-color: var(--accent); }
+.ex-status{ font-size: .82rem; color: var(--text-mute); margin-bottom: 18px; }
+
+.ex-group{ margin-bottom: 30px; }
+.ex-group-title{
+  font-size: .86rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-mute);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+}
+.ex-item{
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  background: var(--bg-raised);
+}
+.ex-item summary{
+  cursor: pointer;
+  padding: 9px 12px;
+  font-size: .89rem;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  list-style: none;
+}
+.ex-item summary::-webkit-details-marker{ display:none; }
+.ex-item summary .marker{ color: var(--text-mute); width: 1em; display:inline-block; }
+.ex-item[open] summary .marker::before{ content: "-"; }
+.ex-item:not([open]) summary .marker::before{ content: "+"; }
+.ex-item summary .fname{ color: var(--text); font-weight: 700; }
+.ex-item summary .fpath{ color: var(--text-mute); font-size: .82rem; }
+.ex-item .ex-body{ border-top: 1px solid var(--border); padding: 12px; }
+.ex-item .ex-body pre{ margin-bottom: 8px; max-height: 480px; }
+.ex-item .ex-src-link{ font-size: .8rem; color: var(--text-mute); }
+.ex-loading{ color: var(--text-mute); font-size: .85rem; padding: 8px 0; }
+
+.note-box{
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  padding: 12px 14px;
+  font-size: .88rem;
+  color: var(--text-dim);
+  margin: 0 0 1.4em;
+}
+
+</style>
+<script>
+// theme toggle, persisted in localStorage
+(function () {
+  var KEY = "mj-site-theme";
+  var root = document.documentElement;
+
+  function apply(theme) {
+    root.setAttribute("data-theme", theme);
+    var btn = document.getElementById("theme-toggle");
+    if (btn) btn.textContent = theme === "dark" ? "[ light ]" : "[ dark ]";
+  }
+
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  if (!saved) {
+    saved = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark" : "light";
+  }
+  apply(saved);
+
+  document.addEventListener("DOMContentLoaded", function () {
+    var btn = document.getElementById("theme-toggle");
+    if (!btn) return;
+    apply(root.getAttribute("data-theme") || saved);
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      apply(cur);
+      try { localStorage.setItem(KEY, cur); } catch (e) {}
+    });
+  });
+})();
+
+</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a href="index.html" class="logo">mj</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="docs.html" class="active">Docs</a>
+      <a href="learn.html">Learn</a>
+      <a href="examples.html">Examples</a>
+      <a href="library.html">Library</a>
+      <a href="install.html">Install</a>
+      <a href="https://github.com/h-sys-2025/mj" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+    <button id="theme-toggle" aria-label="Toggle theme">[ dark ]</button>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="page-head">
+      <span class="kicker">docs/*.md</span>
+      <h1>Documentation</h1>
+      <p class="dim">Reference notes taken directly from the <code>docs/</code> folder of the repository.</p>
+    </div>
+
+    <div class="doc-layout">
+      <nav class="doc-nav">
+        <a href="#control-flow">Control flow</a>
+        <a href="#errors">Errors</a>
+        <a href="#gc-ownership">GC and ownership</a>
+        <a href="#methods">Methods</a>
+        <a href="#preprocessor">Preprocessor</a>
+        <a href="#optimizations">Optimizations</a>
+        <a href="#ecosystem">Ecosystem</a>
+        <a href="#registry">Registry</a>
+        <a href="#strings">Strings</a>
+        <a href="#disasm">Disassembler</a>
+      </nav>
+
+      <div class="doc-content">
+
+        <section class="doc-section" id="control-flow">
+          <h2>Control flow</h2>
+
+          <h3>if / else</h3>
+          <pre><code>if (cond) {
+  ...
+} else if (cond) {
+  ...
+} else {
+  ...
+}</code></pre>
+          <p class="dim">Compiles to: evaluate the condition, <code>OP_JUMP_IF_FALSE</code> into the else branch, the then body, an unconditional <code>OP_JUMP</code> past the else, then the else body.</p>
+
+          <h3>while</h3>
+          <pre><code>while (cond) {
+  ...
+}</code></pre>
+
+          <h3>for (C-style)</h3>
+          <pre><code>for (init; cond; step) {
+  body
+}</code></pre>
+          <p class="dim">Desugars to:</p>
+          <pre><code>{
+  init;
+  while (cond) {
+    body;
+    step;
+  }
+}</code></pre>
+
+          <h3>Labels and goto</h3>
+          <pre><code>start:
+  ...
+  goto start;
+  ...
+  if (x &gt; 10) goto done;
+done:</code></pre>
+          <p class="dim"><code>name:</code> defines a label at the current bytecode offset. <code>goto name;</code> emits <code>OP_JUMP</code> (or <code>OP_LOOP</code> for a backward jump) and patches the offset.</p>
+
+          <h3>Conditional jumps</h3>
+          <p>Used internally, and exposed: <code>OP_JUMP_IF_FALSE</code>, <code>OP_JUMP_IF_TRUE</code> (optional), <code>OP_JUMP</code> (unconditional).</p>
+          <p class="dim">The template JIT turns all of the above into native <code>jcc</code> / <code>jmp</code> instructions with correct rel32 patching.</p>
+        </section>
+
+        <section class="doc-section" id="errors">
+          <h2>Error handling</h2>
+
+          <h3>Compile-time</h3>
+          <p>Format: <code>file:line:col: error: message</code>. Shows the source line with a caret under the column, plus near-token context when useful.</p>
+
+          <h3>Runtime</h3>
+          <p>Format: <code>file:line: runtime error: message</code>. Includes a call stack of function names, with typed hints by error class:</p>
+          <ul>
+            <li>division / modulo by zero</li>
+            <li>non-callable values</li>
+            <li>index out of bounds (reports index and length)</li>
+            <li>wrong index key types (array needs a number, map needs a string)</li>
+            <li>stack / frame overflow (recursion)</li>
+            <li>C-interop arity / type / null pointer</li>
+          </ul>
+
+          <h3>Catch (fixed 2026-08-17)</h3>
+          <p class="dim">If a <code>catch</code> handler is active, runtime errors jump there, the same path as <code>panic</code>, instead of exiting immediately. A parsing bug that limited <code>catch(err) { ... }</code> bodies to a single trailing expression has been fixed -- bodies now accept ordinary statements (<code>print</code>, <code>var</code>, and so on), with the last stacked value used as the recovery result.</p>
+          <pre><code>var x = 1 / 0 catch(err) {
+  print err;
+  0;
+};</code></pre>
+          <p class="dim">Import path resolution and import-time error reporting were also tightened up in the same update.</p>
+
+          <h3>Safety goal</h3>
+          <p class="dim">A clear abort is preferred over a silent segfault. Bounds and type checks sit on the slow path (<code>__builtin_expect</code>), so hot numeric loops stay tight.</p>
+        </section>
+
+        <section class="doc-section" id="gc-ownership">
+          <h2>GC and ownership</h2>
+
+          <h3>Does GC affect speed</h3>
+          <p>Yes, when it runs. Pure numeric JIT loops allocate nothing, so the impact is close to zero. Allocation-heavy code may pause near 75 percent of the 512MB arena.</p>
+          <pre><code>./mj --no-gc script.mj</code></pre>
+
+          <h3>Is GC safe</h3>
+          <p class="dim">Optional mark-sweep is safe to enable. The bump allocator does not free individual objects yet; marks support a future free-list. Use <code>--no-gc</code> for maximum determinism.</p>
+
+          <h3>Ownership</h3>
+          <p class="dim"><code>--ownership</code> is experimental and off by default. Full borrow checking is not enforced yet.</p>
+        </section>
+
+        <section class="doc-section" id="methods">
+          <h2>Builtin methods</h2>
+          <p class="dim">UFCS-style, not OOP. Syntax: <code>value.method(args)</code>, working on strings, arrays, maps, ints, and f64. The full, current list lives in <code>stdlib/extern/natives_table.inc</code>.</p>
+
+          <h3>Strings (Perl-leaning)</h3>
+          <p><code>len</code>/<code>length</code>/<code>size</code>, <code>to_lower</code>/<code>lower</code>/<code>downcase</code>, <code>to_upper</code>/<code>upper</code>/<code>upcase</code>, <code>trim</code>/<code>trim_spaces</code>/<code>strip</code>, <code>trim_left</code>/<code>ltrim</code>, <code>trim_right</code>/<code>rtrim</code>, <code>reverse</code>, <code>repeat</code>, <code>contains</code>, <code>starts_with</code>/<code>has_prefix</code>, <code>ends_with</code>/<code>has_suffix</code>, <code>index_of</code>/<code>find</code>, <code>rindex</code>/<code>rfind</code>, <code>substr</code>/<code>slice</code>/<code>mid</code>, <code>char_at</code>/<code>at</code>/<code>get</code>, <code>ord</code>/<code>code</code>, <code>split</code>, <code>replace</code>/<code>gsub</code>, <code>replace_first</code>, <code>pad_left</code>/<code>ljust</code>, <code>pad_right</code>/<code>rjust</code>, <code>is_empty</code>, <code>is_blank</code>, <code>lines</code>, <code>words</code>, <code>count</code>, <code>chomp</code>, <code>capitalize</code>/<code>title</code>.</p>
+
+          <h3>Arrays</h3>
+          <p><code>len</code>, <code>push</code>/<code>append</code>/<code>add</code>, <code>pop</code>, <code>first</code>/<code>head</code>, <code>last</code>, <code>sum</code>, <code>max</code>, <code>min</code>, <code>reverse</code>, <code>slice</code>/<code>sub</code>, <code>contains</code>/<code>includes</code>, <code>join</code>, <code>clear</code>, <code>is_empty</code>, <code>get</code>, <code>set</code>.</p>
+
+          <h3>Maps</h3>
+          <p><code>len</code>, <code>get</code>/<code>at</code>, <code>set</code>/<code>put</code>, <code>has</code>/<code>has_key</code>/<code>contains</code>, <code>keys</code>, <code>values</code>, <code>clear</code>, <code>is_empty</code>, <code>delete</code>/<code>remove</code>.</p>
+
+          <h3>Numbers</h3>
+          <p><code>abs</code>, <code>neg</code>, <code>floor</code>, <code>ceil</code>, <code>round</code>, <code>sqrt</code>, <code>sq</code>/<code>square</code>, <code>sign</code>, <code>to_int</code>/<code>int</code>, <code>to_f64</code>/<code>float</code>, <code>is_even</code>, <code>is_odd</code>, <code>clamp</code>, <code>to_string</code>/<code>str</code>.</p>
+
+          <h3>Universal</h3>
+          <p><code>type</code>/<code>typeof</code>, <code>to_string</code>, <code>len</code>.</p>
+
+          <h3>New 2026-08-17</h3>
+          <p class="dim">38 functions added in the latest update, grouped by what they do.</p>
+          <table>
+            <thead><tr><th>Group</th><th>New functions</th></tr></thead>
+            <tbody>
+              <tr><td>Type checks</td><td><code>is_nil</code>, <code>is_num</code>, <code>is_str</code>, <code>is_array</code>, <code>is_map</code>, <code>is_bool</code>, <code>is_fn</code>, <code>is_even</code>, <code>is_odd</code></td></tr>
+              <tr><td>Array chaining</td><td><code>arr_rev</code>, <code>arr_sort</code>, <code>arr_take</code>, <code>arr_drop</code>, <code>arr_first</code>, <code>arr_last</code>, <code>arr_contains</code>, <code>arr_flatten</code>, <code>arr_zip</code>, <code>arr_enumerate</code>, <code>arr_any</code>, <code>arr_all</code>, <code>rev</code></td></tr>
+              <tr><td>Strings</td><td><code>pad_left</code>, <code>pad_right</code>, <code>str_reverse</code>, <code>str_chars</code>, <code>str_count</code>, <code>str_starts</code>, <code>str_ends</code>, <code>str_is_blank</code>, <code>str_is_empty</code></td></tr>
+              <tr><td>Maps</td><td><code>map_merge</code>, <code>map_size</code></td></tr>
+              <tr><td>Refs</td><td><code>ref_kind</code>, <code>ref_valid</code></td></tr>
+              <tr><td>Numbers / misc</td><td><code>clamp</code>, <code>sign</code>, <code>identity</code></td></tr>
+            </tbody>
+          </table>
+          <p class="dim"><code>number_list.rev()[0]</code> returns a new reversed array and chains like any other method; <code>reverse_inplace()</code> / <code>rev_mut()</code> mutates instead.</p>
+        </section>
+
+        <section class="doc-section" id="preprocessor">
+          <h2>Preprocessor (new 2026-08-17)</h2>
+          <p class="dim">A compile-time preprocessor was added alongside the macro system. The main change: macros defined in an imported file now export to the importer, rather than staying local to their own file.</p>
+          <table>
+            <thead><tr><th>Directive</th><th>Role</th></tr></thead>
+            <tbody>
+              <tr><td><code>#define NAME val</code></td><td>object-like macro</td></tr>
+              <tr><td><code>#define F(x) ...</code></td><td>function-like macro</td></tr>
+              <tr><td><code>#undef NAME</code></td><td>remove a macro</td></tr>
+              <tr><td><code>#if</code> / <code>#else</code> / <code>#endif</code></td><td>compile-time branch</td></tr>
+              <tr><td><code>#ifdef</code> / <code>#ifndef</code></td><td>macro-presence branch</td></tr>
+              <tr><td><code>defined(NAME)</code></td><td>usable inside an <code>#if</code> condition</td></tr>
+              <tr><td><code>$os</code> / <code>$arch</code></td><td><code>"linux"</code> / <code>"darwin"</code> / ...; <code>"x86_64"</code> / <code>"arm64"</code> / ...; usable in <code>#if</code></td></tr>
+            </tbody>
+          </table>
+          <pre><code>#if $os == "linux"
+  print "linux";
+#else
+  print "other";
+#endif
+
+#define VER 2
+#ifdef VER
+  print VER;
+#endif
+#undef VER
+#ifndef VER
+  print "undefined VER";
+#endif</code></pre>
+          <p class="dim">
+            <code>stdlib/fs.mj</code> now exports short macro aliases this way:
+            importing it gives you <code>read</code>, <code>write</code>,
+            <code>ls</code>, <code>cwd</code>, <code>mkdir</code>, and more,
+            on top of the original <code>fs_*</code> functions.
+          </p>
+        </section>
+
+        <section class="doc-section" id="optimizations">
+          <h2>Optimizations</h2>
+          <p class="dim">Modern bytecode techniques, aimed at script makers and hobby programmers: fast enough to be fun, simple enough to understand and control.</p>
+
+          <h3>Compile-time passes -- optimize()</h3>
+          <ol>
+            <li><strong>Constant folding</strong> -- <code>CONST a; CONST b; ADD/SUB/MUL/DIV/MOD/CMP</code> collapses to a single <code>CONST result</code>. Unary <code>NEG</code> / <code>NOT</code> on constants is folded too.</li>
+            <li><strong>Dead code elimination</strong> -- marks jump targets and sequential flow, drops unreachable code after <code>RETURN</code> and unconditional <code>JUMP</code>.</li>
+            <li><strong>Superinstructions</strong> -- <code>s = s + i</code> becomes <code>OP_ADD_LOCALS</code>; <code>i = i + 1</code> becomes <code>OP_INC_LOCAL</code>. Jump offsets are retargeted after compaction. New as of 2026-08-17, where present: <code>OP_ADD_LOCAL_CONST</code> and <code>OP_MUL_LOCAL_CONST</code> for <code>local += const</code> / <code>local *= const</code>.</li>
+            <li><strong>NOP elimination</strong> -- folded and dead instructions are removed, code is compacted.</li>
+            <li><strong>SSA / register hints</strong> -- new pass feeding the template JIT on numeric windows.</li>
+          </ol>
+
+          <h3>Runtime</h3>
+          <ul>
+            <li>Stable frame pointer, no per-instruction frame reload</li>
+            <li>Dense numeric locals for fused ops</li>
+            <li><code>OP_SUM_LOOP</code> / <code>OP_SUM_GLOB_LOOP</code> for hot loops</li>
+            <li>Optional <code>MJ_DUMP=1</code> to inspect bytecode after optimization</li>
+          </ul>
+
+          <h3>Design note, versus LuaJIT</h3>
+          <p class="dim">LuaJIT uses a tracing JIT and SSA-style IR. mj stays a small, readable bytecode VM with a template-JIT heritage, so the kernel remains under complete control in one C file. The passes above chase the same ideas, folding, DCE, specializing hot patterns, without the complexity of a full trace compiler.</p>
+
+          <h3>Hobby builtins</h3>
+          <table>
+            <thead><tr><th>Group</th><th>Functions</th></tr></thead>
+            <tbody>
+              <tr><td>Time / shell</td><td><code>clock</code>, <code>time</code>, <code>system</code>, <code>getenv</code>, <code>exit</code></td></tr>
+              <tr><td>Math</td><td><code>sqrt</code>, <code>abs</code>, <code>min</code>, <code>max</code>, <code>floor</code></td></tr>
+              <tr><td>Strings</td><td><code>strlen</code>, <code>substr</code>, <code>split</code>, <code>join</code>, <code>replace</code>, <code>trim</code>, <code>upper</code>, <code>lower</code>, <code>contains</code>, <code>startswith</code>, <code>endswith</code>, <code>indexof</code>, <code>repeat</code>, <code>ord</code>, <code>chr</code></td></tr>
+              <tr><td>Collections</td><td><code>array</code>, <code>push</code>, <code>len</code>, <code>map</code>, <code>mget</code>, <code>mset</code>, <code>haskey</code>, <code>mkeys</code></td></tr>
+              <tr><td>IO</td><td><code>print</code>, <code>readfile</code>, <code>writefile</code>, <code>input</code></td></tr>
+              <tr><td>Types</td><td><code>type</code>, <code>tostring</code>, <code>tonumber</code>, <code>assert</code></td></tr>
+            </tbody>
+          </table>
+
+          <h3>Data management, near-native</h3>
+          <ul>
+            <li>Dense numeric arrays: a parallel <code>int64_t nums[]</code> buffer when every element is a number</li>
+            <li><code>range(n)</code> / <code>range(lo, hi)</code>, built in C</li>
+            <li><code>array_sum</code> / <code>array_min</code> / <code>array_max</code>, C loops over the dense buffer</li>
+            <li><code>array_fill(n, v)</code> / <code>array_copy</code>, bulk operations in C</li>
+            <li><code>sum_range(n)</code>, a native 0..n-1 sum, same speed as a fused while loop</li>
+            <li><code>array(cap)</code>, pre-sized capacity to avoid repeated growth</li>
+            <li>A larger heap, 512MB, for big working sets</li>
+          </ul>
+        </section>
+
+        <section class="doc-section" id="ecosystem">
+          <h2>Ecosystem</h2>
+
+          <h3>Package manager -- mjpm</h3>
+          <p class="dim">Temporary glue for now; the real one is planned to be written in mj itself.</p>
+          <pre><code>./mjpm.sh init my-app
+./mjpm.sh list
+./mjpm.sh add math
+./mjpm.sh install
+./mjpm.sh run</code></pre>
+
+          <h3>Import packages</h3>
+          <pre><code>import "math.mj"           // resolves ./math.mj
+import "stdlib:fs" as fs;
+import "vendor:fs" as vfs;
+
+print fs.fs_ls(fs.fs_cwd());
+
+print sum_range(100);      // from math
+print fib_jit(35);         // native template JIT</code></pre>
+          <p class="dim">Set <code>MJ_HOME</code> to the mj install root for global vendor resolution (<code>MJ_STDLIB</code> and <code>MJ_VENDOR_LIBS</code> also work directly).</p>
+
+          <h3>C plugins (extern_c)</h3>
+          <p class="dim">Five plugins live in <code>stdlib/extern_c/</code>, added 2026-08-17: <code>radix_utils.c</code> (hex/oct/bin), <code>net_sockets.c</code> (TCP/UDP), <code>pcap_lite.c</code> (libpcap, optional), <code>sdl2_plug.c</code> and <code>raylib_plug.c</code> (graphics, optional libs). See <a href="library.html">Library</a> for the full breakdown.</p>
+          <div class="note-box">
+            The two new demo files, <code>examples/demo_net.mj</code> and
+            <code>examples/demo_radix.mj</code>, load these plugins from a
+            path that does not exist in the repository
+            (<code>"I_like_bj/native_plugs/..."</code>). Point the
+            <code>native ... from "..."</code> path at
+            <code>stdlib/extern_c/net_sockets.c</code> /
+            <code>stdlib/extern_c/radix_utils.c</code> instead to run them.
+          </div>
+        </section>
+
+        <section class="doc-section" id="registry">
+          <h2>Vendor registry</h2>
+          <p class="dim">Bundled packages, each currently at version 1.0.0.</p>
+          <table>
+            <thead><tr><th>Package</th><th>Role</th></tr></thead>
+            <tbody>
+              <tr><td><code>json</code></td><td>JSON parse</td></tr>
+              <tr><td><code>http</code></td><td>HTTP client</td></tr>
+              <tr><td><code>fs</code></td><td>filesystem</td></tr>
+              <tr><td><code>path</code></td><td>path utils</td></tr>
+              <tr><td><code>strings</code></td><td>string utils</td></tr>
+              <tr><td><code>math</code></td><td>integer math</td></tr>
+              <tr><td><code>time</code></td><td>clock / sleep</td></tr>
+              <tr><td><code>log</code></td><td>logging</td></tr>
+              <tr><td><code>env</code></td><td>env vars</td></tr>
+              <tr><td><code>flags</code></td><td>CLI flags</td></tr>
+              <tr><td><code>hash</code></td><td>FNV hash</td></tr>
+              <tr><td><code>uuid</code></td><td>ids</td></tr>
+              <tr><td><code>csv</code></td><td>CSV parse</td></tr>
+              <tr><td><code>regex</code></td><td>simple match</td></tr>
+              <tr><td><code>process</code></td><td>system / exit</td></tr>
+              <tr><td><code>channel</code></td><td>mailboxes</td></tr>
+              <tr><td><code>concurrent</code></td><td>async helpers</td></tr>
+              <tr><td><code>bitset</code></td><td>bit ops</td></tr>
+              <tr><td><code>encoding</code></td><td>hex</td></tr>
+              <tr><td><code>testing</code></td><td>tests</td></tr>
+              <tr><td><code>assert</code></td><td>assert</td></tr>
+              <tr><td><code>random</code></td><td>LCG RNG</td></tr>
+            </tbody>
+          </table>
+          <p><a href="library.html">Full library reference &gt;</a></p>
+        </section>
+
+        <section class="doc-section" id="strings">
+          <h2>String power tools</h2>
+          <p class="dim">Perl-inspired. Easy to read, easy to write, useful for scripting and shell-like tasks.</p>
+          <table>
+            <thead><tr><th>Function</th><th>Meaning</th><th>Example</th></tr></thead>
+            <tbody>
+              <tr><td><code>strlen(s)</code></td><td>length</td><td><code>strlen("hi")</code> -&gt; <code>2</code></td></tr>
+              <tr><td><code>substr(s, start, [len])</code></td><td>slice, negative start counts from the end</td><td><code>substr("hello", 1, 3)</code> -&gt; <code>"ell"</code></td></tr>
+              <tr><td><code>split(sep, s)</code></td><td>split into array</td><td><code>split(",", "a,b")</code></td></tr>
+              <tr><td><code>join(sep, arr)</code></td><td>join array</td><td><code>join("-", parts)</code></td></tr>
+              <tr><td><code>replace(s, from, to, [all])</code></td><td>replace first or all</td><td><code>replace(s, "a", "b", true)</code></td></tr>
+              <tr><td><code>trim(s)</code></td><td>strip ends</td><td><code>trim("  x  ")</code> -&gt; <code>"x"</code></td></tr>
+              <tr><td><code>upper(s)</code> / <code>lower(s)</code></td><td>case</td><td><code>upper("Hi")</code> -&gt; <code>"HI"</code></td></tr>
+              <tr><td><code>contains(s, sub)</code></td><td>substring test</td><td></td></tr>
+              <tr><td><code>startswith(s, pre)</code></td><td>prefix test</td><td></td></tr>
+              <tr><td><code>endswith(s, suf)</code></td><td>suffix test</td><td></td></tr>
+              <tr><td><code>indexof(s, sub, [from])</code></td><td>find index or -1</td><td></td></tr>
+              <tr><td><code>repeat(s, n)</code></td><td>repeat</td><td><code>repeat("ab", 3)</code> -&gt; <code>"ababab"</code></td></tr>
+              <tr><td><code>ord(s)</code> / <code>chr(n)</code></td><td>codepoint to/from char</td><td></td></tr>
+              <tr><td><code>s |&gt; f</code></td><td>pipe</td><td><code>"  x  " |&gt; trim |&gt; upper</code></td></tr>
+            </tbody>
+          </table>
+          <p class="dim">All of the above compose with <code>|&gt;</code> and with first-class functions. Method access works too:</p>
+          <pre><code>var name = " JonATHan WiCk   ";
+var sanitizer = name
+  .trim(name)
+  .lower()
+  .split(" ");
+
+var sanitized = "";
+foreach (var x : sanitizer) {
+  var p = x[0].upper();
+  sanitized = "${sanitized}${p}${x[1..]} ";
+}
+print sanitized.trim();</code></pre>
+        </section>
+
+        <section class="doc-section" id="disasm">
+          <h2>Bytecode and .bbw inspection</h2>
+
+          <h3>Commands</h3>
+          <pre><code># Pretty-print compiled bytecode for a source file (includes nested funs)
+./build/mj --disasm path/to/script.mj
+
+# Inspect a shipped .bbw bundle (plus a raw hex dump)
+./build/mj --disasm path/to/script.bbw
+./build/mj --dump-bbw path/to/script.bbw   # same</code></pre>
+
+          <h3>Output</h3>
+          <ol>
+            <li>Header -- name, code length, nlocals, nconst, arity, upvalues</li>
+            <li>Constants pool -- numbers, strings, function refs</li>
+            <li>Code listing -- <code>offset  OPCODE  operands  ; comments</code></li>
+            <li>For <code>.bbw</code> only -- a raw code hex dump, for reverse engineering</li>
+          </ol>
+
+          <h3>Notes</h3>
+          <ul>
+            <li><code>.bbw</code> v1 stores the top-level script only; nested <code>fun</code> bodies may appear as <code>nil</code> in the const pool when loading a <code>.bbw</code> (compile from <code>.mj</code> with <code>--disasm</code> to see full nested functions)</li>
+            <li>Jump operands show absolute target offsets, e.g. <code>-&gt; 00ab</code></li>
+            <li>Specialized ops (<code>SUM_LOOP</code>, <code>ADD_LOCALS</code>, ...) print structured operands</li>
+          </ul>
+
+          <h3>Example</h3>
+          <pre><code>0010  SUM_LOOP           acc=L[2] idx=L[3] lim=L[1]
+0009  CALL               argc=1
+0000  CONST              1       ; 10</code></pre>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <div>mj -- embeddable systems scripting language. Source on <a href="https://github.com/h-sys-2025/mj" target="_blank" rel="noopener">GitHub</a>.</div>
+    <div><a href="index.html">Home</a> | <a href="learn.html">Learn</a> | <a href="library.html">Library</a></div>
+  </div>
+</footer>
+
+<script>
+  // highlight active doc-nav link based on scroll position
+  (function(){
+    var sections = Array.prototype.slice.call(document.querySelectorAll(".doc-section"));
+    var links = Array.prototype.slice.call(document.querySelectorAll(".doc-nav a"));
+    function onScroll(){
+      var pos = window.scrollY + 100;
+      var current = sections[0];
+      sections.forEach(function(s){ if (s.offsetTop <= pos) current = s; });
+      links.forEach(function(l){
+        l.classList.toggle("active", current && l.getAttribute("href") === "#" + current.id);
+      });
+    }
+    document.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+  })();
+</script>
+
+</body>
+</html>

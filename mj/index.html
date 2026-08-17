@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mj -- embeddable systems scripting language</title>
+<meta name="description" content="mj is a small, fast, embeddable scripting language written in C, with a template JIT, C/C++/Odin interop, and a bytecode VM.">
+<style>
+/* mj language website - shared stylesheet
+   down-to-earth, monospace, minimal color, light + dark theme */
+
+:root{
+  --font: ui-monospace, "Cascadia Code", "Consolas", "SFMono-Regular", Menlo, "Liberation Mono", monospace;
+
+  --bg:        #faf9f5;
+  --bg-raised: #f1efe6;
+  --bg-code:   #eeece2;
+  --border:    #d8d4c4;
+  --text:      #1d1c18;
+  --text-dim:  #5c584c;
+  --text-mute: #8a8574;
+  --accent:    #4b6a4f;
+  --accent-2:  #7a5230;
+  --link:      #3d5a41;
+  --tag-bg:    #e4e0cf;
+}
+
+html[data-theme="dark"]{
+  --bg:        #16150f;
+  --bg-raised: #201e17;
+  --bg-code:   #1c1b14;
+  --border:    #3a382c;
+  --text:      #e9e4d6;
+  --text-dim:  #b3ac97;
+  --text-mute: #837c6a;
+  --accent:    #7fae84;
+  --accent-2:  #c98f5c;
+  --link:      #8dbb8f;
+  --tag-bg:    #2a2820;
+}
+
+*{ box-sizing: border-box; }
+
+html{ -webkit-text-size-adjust: 100%; }
+
+body{
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.65;
+  transition: background .15s ease, color .15s ease;
+}
+
+.wrap{
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 22px;
+}
+
+a{ color: var(--link); text-decoration: none; border-bottom: 1px solid transparent; }
+a:hover{ border-bottom-color: var(--link); }
+
+h1, h2, h3, h4{
+  font-family: var(--font);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+h1{ font-size: 1.9rem; margin: 0 0 10px; }
+h2{ font-size: 1.35rem; margin: 2.4em 0 .6em; padding-top: .6em; border-top: 1px solid var(--border); }
+h2:first-of-type{ border-top: none; padding-top: 0; margin-top: 1.2em; }
+h3{ font-size: 1.05rem; margin: 1.6em 0 .5em; color: var(--text); }
+h4{ font-size: .95rem; margin: 1.2em 0 .4em; color: var(--text-dim); }
+
+p{ margin: 0 0 1em; color: var(--text); }
+.dim{ color: var(--text-dim); }
+.mute{ color: var(--text-mute); }
+
+/* header */
+.site-header{
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.header-inner{
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 22px;
+}
+.logo{
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.logo:hover{ border-color: var(--accent); }
+.site-header nav{
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+.site-header nav a{
+  color: var(--text-dim);
+  font-size: .92rem;
+  padding: 4px 0;
+}
+.site-header nav a.active{ color: var(--text); border-bottom-color: var(--accent); }
+.site-header nav a:hover{ color: var(--text); }
+
+#theme-toggle{
+  font-family: var(--font);
+  font-size: .82rem;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  padding: 5px 10px;
+  cursor: pointer;
+}
+#theme-toggle:hover{ color: var(--text); border-color: var(--accent); }
+
+/* layout */
+main{ padding: 40px 0 80px; }
+.page-head{ margin-bottom: 30px; }
+.page-head .kicker{
+  display: inline-block;
+  font-size: .78rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  margin-bottom: 14px;
+}
+
+/* hero */
+.hero{ padding: 30px 0 10px; }
+.hero h1{ font-size: 2.4rem; }
+.hero .lede{ font-size: 1.02rem; color: var(--text-dim); max-width: 62ch; }
+.hero .goal{ margin-top: 18px; color: var(--text-dim); }
+
+.btn-row{ display:flex; gap: 12px; margin: 24px 0 8px; flex-wrap: wrap; }
+.btn{
+  display: inline-block;
+  font-family: var(--font);
+  font-size: .9rem;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.btn:hover{ border-color: var(--accent); border-bottom-color: var(--accent); color: var(--accent); }
+.btn.primary{ background: var(--bg-raised); border-color: var(--text-dim); }
+.btn.primary:hover{ border-color: var(--accent); }
+
+/* code */
+pre{
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-size: .86rem;
+  line-height: 1.55;
+  margin: 0 0 1.2em;
+}
+code{
+  font-family: var(--font);
+  background: var(--bg-code);
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  font-size: .87em;
+}
+pre code{ background: none; border: none; padding: 0; }
+
+.code-comment{ color: var(--text-mute); }
+
+/* tables */
+table{
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.4em;
+  font-size: .89rem;
+}
+th, td{
+  border: 1px solid var(--border);
+  padding: 7px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+th{
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  font-weight: 700;
+  font-size: .82rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+tr:nth-child(even) td{ background: color-mix(in srgb, var(--bg-raised) 40%, transparent); }
+
+/* cards / grid */
+.grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+.card{
+  border: 1px solid var(--border);
+  padding: 16px;
+  background: var(--bg-raised);
+}
+.card h3{ margin-top: 0; }
+.card p{ color: var(--text-dim); font-size: .9rem; margin-bottom: 0; }
+.card a.stretch{ position: absolute; inset: 0; }
+.card{ position: relative; }
+
+/* lists */
+ul, ol{ padding-left: 1.3em; color: var(--text); }
+li{ margin: .3em 0; }
+
+/* footer */
+footer{
+  border-top: 1px solid var(--border);
+  padding: 26px 0 50px;
+  color: var(--text-mute);
+  font-size: .84rem;
+}
+footer a{ color: var(--text-dim); }
+footer .foot-row{ display:flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+/* toc / sidebar nav for docs */
+.doc-layout{
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 40px;
+}
+.doc-nav{
+  position: sticky;
+  top: 70px;
+  align-self: start;
+  font-size: .85rem;
+}
+.doc-nav a{
+  display: block;
+  padding: 4px 0;
+  color: var(--text-dim);
+  border-bottom: none;
+}
+.doc-nav a:hover, .doc-nav a.active{ color: var(--accent); }
+.doc-section{ margin-bottom: 3em; padding-bottom: .5em; border-bottom: 1px dashed var(--border); }
+.doc-section:last-child{ border-bottom: none; }
+
+@media (max-width: 760px){
+  .doc-layout{ grid-template-columns: 1fr; }
+  .doc-nav{ position: static; display:flex; flex-wrap:wrap; gap: 4px 14px; margin-bottom: 20px; }
+  .hero h1{ font-size: 1.9rem; }
+}
+
+/* badges/tags */
+.tag{
+  display: inline-block;
+  font-size: .74rem;
+  color: var(--text-dim);
+  background: var(--tag-bg);
+  border: 1px solid var(--border);
+  padding: 1px 7px;
+  margin: 0 6px 6px 0;
+}
+
+/* examples explorer */
+.ex-toolbar{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.ex-toolbar input[type=text]{
+  font-family: var(--font);
+  font-size: .88rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 7px 10px;
+  flex: 1;
+  min-width: 180px;
+}
+.ex-toolbar input[type=text]:focus{ outline: none; border-color: var(--accent); }
+.ex-status{ font-size: .82rem; color: var(--text-mute); margin-bottom: 18px; }
+
+.ex-group{ margin-bottom: 30px; }
+.ex-group-title{
+  font-size: .86rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-mute);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+}
+.ex-item{
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  background: var(--bg-raised);
+}
+.ex-item summary{
+  cursor: pointer;
+  padding: 9px 12px;
+  font-size: .89rem;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  list-style: none;
+}
+.ex-item summary::-webkit-details-marker{ display:none; }
+.ex-item summary .marker{ color: var(--text-mute); width: 1em; display:inline-block; }
+.ex-item[open] summary .marker::before{ content: "-"; }
+.ex-item:not([open]) summary .marker::before{ content: "+"; }
+.ex-item summary .fname{ color: var(--text); font-weight: 700; }
+.ex-item summary .fpath{ color: var(--text-mute); font-size: .82rem; }
+.ex-item .ex-body{ border-top: 1px solid var(--border); padding: 12px; }
+.ex-item .ex-body pre{ margin-bottom: 8px; max-height: 480px; }
+.ex-item .ex-src-link{ font-size: .8rem; color: var(--text-mute); }
+.ex-loading{ color: var(--text-mute); font-size: .85rem; padding: 8px 0; }
+
+.note-box{
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  padding: 12px 14px;
+  font-size: .88rem;
+  color: var(--text-dim);
+  margin: 0 0 1.4em;
+}
+
+</style>
+<script>
+// theme toggle, persisted in localStorage
+(function () {
+  var KEY = "mj-site-theme";
+  var root = document.documentElement;
+
+  function apply(theme) {
+    root.setAttribute("data-theme", theme);
+    var btn = document.getElementById("theme-toggle");
+    if (btn) btn.textContent = theme === "dark" ? "[ light ]" : "[ dark ]";
+  }
+
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  if (!saved) {
+    saved = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark" : "light";
+  }
+  apply(saved);
+
+  document.addEventListener("DOMContentLoaded", function () {
+    var btn = document.getElementById("theme-toggle");
+    if (!btn) return;
+    apply(root.getAttribute("data-theme") || saved);
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      apply(cur);
+      try { localStorage.setItem(KEY, cur); } catch (e) {}
+    });
+  });
+})();
+
+</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a href="index.html" class="logo">mj</a>
+    <nav>
+      <a href="index.html" class="active">Home</a>
+      <a href="docs.html">Docs</a>
+      <a href="learn.html">Learn</a>
+      <a href="examples.html">Examples</a>
+      <a href="library.html">Library</a>
+      <a href="install.html">Install</a>
+      <a href="https://github.com/h-sys-2025/mj" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+    <button id="theme-toggle" aria-label="Toggle theme">[ dark ]</button>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <h1>mj</h1>
+    <p class="lede">
+      An embeddable systems scripting language, written in C for Linux x86-64.
+      A small bytecode VM with a template JIT, computed-goto dispatch,
+      C/C++/Odin interop, and a growing standard library.
+    </p>
+    <p class="goal dim">
+      Goals: fast, embeddable, biodiverse tooling, minimal side-effect surface
+      in the core. IO is explicit, through natives and the standard library.
+    </p>
+
+    <div class="btn-row">
+      <a class="btn primary" href="install.html">Quick start</a>
+      <a class="btn" href="examples.html">Browse examples</a>
+      <a class="btn" href="docs.html">Read the docs</a>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <div class="note-box">
+      Updated 2026-08-17: macro export across imports, a compile-time
+      preprocessor, new array and ref builtins, five C interop plugins, and
+      a fix for <code>catch(err)</code> parsing. See
+      <a href="#whats-new">What's new</a> below.
+    </div>
+
+    <h2>Quick start</h2>
+    <pre><code>./build.sh
+./build/mj examples/curriculum/01_values.mj
+# or, directly:
+gcc -O3 -o build/mj mj.c stdlib/builtins/builtins.c -I. -lm -ldl -lpthread</code></pre>
+    <p class="dim">There is also a small REPL: run <code>./build/mj</code> with no file. <code>#help</code>, <code>#quit</code>, <code>#clear</code>; expressions auto-print.</p>
+    <p class="dim">An experimental package manager ships alongside the language. A permanent one is planned to be written in mj itself.</p>
+    <pre><code>./mjpm.sh list
+./mjpm.sh init demo &amp;&amp; cd demo &amp;&amp; ../tools/mjpm.sh add math &amp;&amp; ../tools/mjpm.sh run</code></pre>
+
+    <h2>Highlights</h2>
+    <table>
+      <thead><tr><th>Area</th><th>Feature</th></tr></thead>
+      <tbody>
+        <tr><td>Speed</td><td>Template JIT kernels (<code>fib_jit</code>, sum-loop, array sum); computed-goto VM</td></tr>
+        <tr><td>Packages</td><td><code>mjpm</code> plus <code>stdlib/</code> and <code>vendor-libs/</code> (22 bundled libraries)</td></tr>
+        <tr><td>Interop</td><td>C / C++ / Odin ABI (<code>mj_api.h</code>), <code>cstruct_*</code>, cbind</td></tr>
+        <tr><td>Concurrency</td><td>async / await plus actor mailboxes</td></tr>
+        <tr><td>Meta</td><td>macros, import, <code>.bbw</code> bundles, <code>--disasm</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2>A short taste</h2>
+    <pre><code>fun loopsum(n) {
+  var s = 0;
+  var i = 0;
+  while (i &lt; n) {
+    s = s + i;
+    i = i + 1;
+  }
+  return s;
+}
+print loopsum(1000);          <span class="code-comment">// 499500</span>
+
+fun min_pair(a: int, b: int): (int, int) {
+  if (a &lt; b) { return (a, b); }
+  return (b, a);
+}
+var tp = min_pair(9, 3);
+print tp.get(0);              <span class="code-comment">// 3</span>
+
+var a = array();
+push(a, 10); push(a, 20); push(a, 30);
+print a.get(1);               <span class="code-comment">// 20</span>
+
+var m = map();
+m["x"] = 7;
+print haskey(m, "x");         <span class="code-comment">// true</span>
+
+print "  hi  ".trim().upper(); <span class="code-comment">// HI</span></code></pre>
+    <p><a href="learn.html">See the full walkthrough on the Learn page &gt;</a></p>
+
+    <h2 id="whats-new">What's new (2026-08-17)</h2>
+    <p class="dim">
+      Four commits landed on <code>master</code> on 2026-08-17, summarized
+      here from the diff:
+    </p>
+
+    <h3>catch(err) parsing fixed</h3>
+    <p class="dim">
+      This was listed as a known bug in the README and is now fixed.
+      <code>catch(err) { ... }</code> bodies accept ordinary statements
+      (<code>print</code>, <code>var</code>, and so on), not just a single
+      trailing expression. The last value left on the stack becomes the
+      recovery result.
+    </p>
+    <pre><code>var x = 1 / 0 catch(err) {
+  print err;
+  0;
+};
+print x;
+
+var y = panic("boom") catch(e) {
+  print e;
+  99;
+};
+print y;</code></pre>
+
+    <h3>A compile-time preprocessor</h3>
+    <p class="dim">
+      <code>#define</code> and <code>#macro</code> now export across
+      imports: a macro defined in an imported file becomes visible to the
+      importer. There's also a small set of conditional directives:
+    </p>
+    <table>
+      <thead><tr><th>Directive</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td><code>#define NAME val</code></td><td>object-like macro</td></tr>
+        <tr><td><code>#define F(x) ...</code></td><td>function-like macro</td></tr>
+        <tr><td><code>#undef NAME</code></td><td>remove a macro</td></tr>
+        <tr><td><code>#if</code> / <code>#else</code> / <code>#endif</code></td><td>compile-time branch</td></tr>
+        <tr><td><code>#ifdef</code> / <code>#ifndef</code></td><td>macro-presence branch</td></tr>
+        <tr><td><code>defined(NAME)</code></td><td>usable inside <code>#if</code></td></tr>
+        <tr><td><code>$os</code> / <code>$arch</code></td><td><code>"linux"</code> / <code>"x86_64"</code> etc, usable in <code>#if</code></td></tr>
+      </tbody>
+    </table>
+    <pre><code>#if $os == "linux"
+  print "linux";
+#else
+  print "other";
+#endif
+
+#define VER 2
+#ifdef VER
+  print VER;
+#endif
+#undef VER
+#ifndef VER
+  print "undefined VER";
+#endif</code></pre>
+    <p class="dim">
+      <code>stdlib/fs.mj</code> uses this to export short aliases
+      (<code>read</code>, <code>write</code>, <code>ls</code>,
+      <code>cwd</code>, <code>mkdir</code>, and more) alongside the original
+      <code>fs_*</code> functions, so <code>fs.ls(fs.cwd())</code> now works
+      the same as <code>fs.fs_ls(fs.fs_cwd())</code>.
+    </p>
+
+    <h3>38 new builtin functions</h3>
+    <p class="dim">Grouped by what they do:</p>
+    <table>
+      <thead><tr><th>Group</th><th>New functions</th></tr></thead>
+      <tbody>
+        <tr><td>Type checks</td><td><code>is_nil</code>, <code>is_num</code>, <code>is_str</code>, <code>is_array</code>, <code>is_map</code>, <code>is_bool</code>, <code>is_fn</code>, <code>is_even</code>, <code>is_odd</code></td></tr>
+        <tr><td>Array chaining</td><td><code>arr_rev</code>, <code>arr_sort</code>, <code>arr_take</code>, <code>arr_drop</code>, <code>arr_first</code>, <code>arr_last</code>, <code>arr_contains</code>, <code>arr_flatten</code>, <code>arr_zip</code>, <code>arr_enumerate</code>, <code>arr_any</code>, <code>arr_all</code>, <code>rev</code></td></tr>
+        <tr><td>Strings</td><td><code>pad_left</code>, <code>pad_right</code>, <code>str_reverse</code>, <code>str_chars</code>, <code>str_count</code>, <code>str_starts</code>, <code>str_ends</code>, <code>str_is_blank</code>, <code>str_is_empty</code></td></tr>
+        <tr><td>Maps</td><td><code>map_merge</code>, <code>map_size</code></td></tr>
+        <tr><td>Refs</td><td><code>ref_kind</code>, <code>ref_valid</code></td></tr>
+        <tr><td>Numbers / misc</td><td><code>clamp</code>, <code>sign</code>, <code>identity</code></td></tr>
+      </tbody>
+    </table>
+    <p class="dim">
+      Array methods chain, so <code>number_list.rev()[0]</code> returns a
+      new reversed array. Use <code>reverse_inplace()</code> or
+      <code>rev_mut()</code> to mutate in place instead.
+    </p>
+
+    <h3>Five C interop plugins</h3>
+    <p class="dim">
+      These live in <code>stdlib/extern_c/</code> and use the same int64
+      ABI as <code>native ... from</code>, <code>cimport</code>, and
+      <code>cbind</code>.
+    </p>
+    <table>
+      <thead><tr><th>Plugin</th><th>Covers</th><th>Extra link flags</th></tr></thead>
+      <tbody>
+        <tr><td><code>radix_utils.c</code></td><td>hex / octal / binary parse and format</td><td>none</td></tr>
+        <tr><td><code>net_sockets.c</code></td><td>TCP / UDP sockets, packet buffers</td><td>none</td></tr>
+        <tr><td><code>pcap_lite.c</code></td><td>libpcap capture</td><td><code>-lpcap</code>, optional</td></tr>
+        <tr><td><code>sdl2_plug.c</code></td><td>SDL2 window / renderer</td><td><code>pkg-config --libs sdl2</code></td></tr>
+        <tr><td><code>raylib_plug.c</code></td><td>raylib window / drawing</td><td><code>-lraylib -lGL ...</code></td></tr>
+      </tbody>
+    </table>
+    <div class="note-box">
+      The two new example files for these plugins,
+      <code>examples/demo_net.mj</code> and <code>examples/demo_radix.mj</code>,
+      point <code>native ... from</code> at a path that doesn't exist in the
+      repository (<code>"I_like_bj/native_plugs/net_sockets.c"</code>). The
+      plugins are actually at <code>stdlib/extern_c/net_sockets.c</code> and
+      <code>stdlib/extern_c/radix_utils.c</code> -- the same typo appears in
+      <code>stdlib/extern_c/README.md</code>'s own build command. Update the
+      path locally before running either example.
+    </div>
+
+    <h3>Smaller changes</h3>
+    <ul>
+      <li>Optimizer: two more superinstructions where applicable, <code>OP_ADD_LOCAL_CONST</code> and <code>OP_MUL_LOCAL_CONST</code>, plus SSA-style register hints feeding the template JIT.</li>
+      <li>REPL: expression auto-print now goes through <code>var __repl_v = (...); print __repl_v;</code> instead of a raw statement, which behaves better for expressions with side effects.</li>
+      <li>The <code>-nW</code> (no-warnings) flag was removed from <code>mj.c</code>'s argument parser.</li>
+      <li>Import path resolution and import-time error messages were tightened up, per <code>docs/ERRORS.md</code>.</li>
+      <li><code>docs/OPTIMIZATIONS.md</code> now lists builtins by group, matching the new function table. <code>docs/DISASM.md</code> was replaced with a full disassembly transcript in place of the earlier short snippet.</li>
+    </ul>
+
+    <h2>Where to go next</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Docs</h3>
+        <p>Control flow, error handling, GC and ownership, optimizations, and the bytecode disassembler.</p>
+        <a class="stretch" href="docs.html"></a>
+      </div>
+      <div class="card">
+        <h3>Learn</h3>
+        <p>An ordered curriculum, from values and operators through async, FFI, and performance.</p>
+        <a class="stretch" href="learn.html"></a>
+      </div>
+      <div class="card">
+        <h3>Examples</h3>
+        <p>Every example file in the repository, pulled live from GitHub and grouped by folder.</p>
+        <a class="stretch" href="examples.html"></a>
+      </div>
+      <div class="card">
+        <h3>Library</h3>
+        <p>Builtin methods, the bundled vendor registry, and the standard library modules.</p>
+        <a class="stretch" href="library.html"></a>
+      </div>
+    </div>
+
+    <h2>Design note</h2>
+    <p class="dim">
+      mj stays a small, readable bytecode VM with a template-JIT heritage,
+      rather than a tracing JIT with SSA-style IR. The optimizer folds
+      constants, eliminates dead code, and specializes a handful of hot
+      patterns (<code>s = s + i</code>, <code>i = i + 1</code>) into
+      superinstructions, keeping the whole kernel in one C file.
+    </p>
+
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <div>mj -- embeddable systems scripting language. Source on <a href="https://github.com/h-sys-2025/mj" target="_blank" rel="noopener">GitHub</a>.</div>
+    <div><a href="docs.html">Docs</a> | <a href="examples.html">Examples</a> | <a href="install.html">Install</a></div>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learn - mj</title>
+<meta name="description" content="An ordered curriculum through the mj language, from values and operators through async, FFI, and performance.">
+<style>
+/* mj language website - shared stylesheet
+   down-to-earth, monospace, minimal color, light + dark theme */
+
+:root{
+  --font: ui-monospace, "Cascadia Code", "Consolas", "SFMono-Regular", Menlo, "Liberation Mono", monospace;
+
+  --bg:        #faf9f5;
+  --bg-raised: #f1efe6;
+  --bg-code:   #eeece2;
+  --border:    #d8d4c4;
+  --text:      #1d1c18;
+  --text-dim:  #5c584c;
+  --text-mute: #8a8574;
+  --accent:    #4b6a4f;
+  --accent-2:  #7a5230;
+  --link:      #3d5a41;
+  --tag-bg:    #e4e0cf;
+}
+
+html[data-theme="dark"]{
+  --bg:        #16150f;
+  --bg-raised: #201e17;
+  --bg-code:   #1c1b14;
+  --border:    #3a382c;
+  --text:      #e9e4d6;
+  --text-dim:  #b3ac97;
+  --text-mute: #837c6a;
+  --accent:    #7fae84;
+  --accent-2:  #c98f5c;
+  --link:      #8dbb8f;
+  --tag-bg:    #2a2820;
+}
+
+*{ box-sizing: border-box; }
+
+html{ -webkit-text-size-adjust: 100%; }
+
+body{
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.65;
+  transition: background .15s ease, color .15s ease;
+}
+
+.wrap{
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 22px;
+}
+
+a{ color: var(--link); text-decoration: none; border-bottom: 1px solid transparent; }
+a:hover{ border-bottom-color: var(--link); }
+
+h1, h2, h3, h4{
+  font-family: var(--font);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+h1{ font-size: 1.9rem; margin: 0 0 10px; }
+h2{ font-size: 1.35rem; margin: 2.4em 0 .6em; padding-top: .6em; border-top: 1px solid var(--border); }
+h2:first-of-type{ border-top: none; padding-top: 0; margin-top: 1.2em; }
+h3{ font-size: 1.05rem; margin: 1.6em 0 .5em; color: var(--text); }
+h4{ font-size: .95rem; margin: 1.2em 0 .4em; color: var(--text-dim); }
+
+p{ margin: 0 0 1em; color: var(--text); }
+.dim{ color: var(--text-dim); }
+.mute{ color: var(--text-mute); }
+
+/* header */
+.site-header{
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.header-inner{
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 22px;
+}
+.logo{
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.logo:hover{ border-color: var(--accent); }
+.site-header nav{
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+.site-header nav a{
+  color: var(--text-dim);
+  font-size: .92rem;
+  padding: 4px 0;
+}
+.site-header nav a.active{ color: var(--text); border-bottom-color: var(--accent); }
+.site-header nav a:hover{ color: var(--text); }
+
+#theme-toggle{
+  font-family: var(--font);
+  font-size: .82rem;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  padding: 5px 10px;
+  cursor: pointer;
+}
+#theme-toggle:hover{ color: var(--text); border-color: var(--accent); }
+
+/* layout */
+main{ padding: 40px 0 80px; }
+.page-head{ margin-bottom: 30px; }
+.page-head .kicker{
+  display: inline-block;
+  font-size: .78rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  margin-bottom: 14px;
+}
+
+/* hero */
+.hero{ padding: 30px 0 10px; }
+.hero h1{ font-size: 2.4rem; }
+.hero .lede{ font-size: 1.02rem; color: var(--text-dim); max-width: 62ch; }
+.hero .goal{ margin-top: 18px; color: var(--text-dim); }
+
+.btn-row{ display:flex; gap: 12px; margin: 24px 0 8px; flex-wrap: wrap; }
+.btn{
+  display: inline-block;
+  font-family: var(--font);
+  font-size: .9rem;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.btn:hover{ border-color: var(--accent); border-bottom-color: var(--accent); color: var(--accent); }
+.btn.primary{ background: var(--bg-raised); border-color: var(--text-dim); }
+.btn.primary:hover{ border-color: var(--accent); }
+
+/* code */
+pre{
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-size: .86rem;
+  line-height: 1.55;
+  margin: 0 0 1.2em;
+}
+code{
+  font-family: var(--font);
+  background: var(--bg-code);
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  font-size: .87em;
+}
+pre code{ background: none; border: none; padding: 0; }
+
+.code-comment{ color: var(--text-mute); }
+
+/* tables */
+table{
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.4em;
+  font-size: .89rem;
+}
+th, td{
+  border: 1px solid var(--border);
+  padding: 7px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+th{
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  font-weight: 700;
+  font-size: .82rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+tr:nth-child(even) td{ background: color-mix(in srgb, var(--bg-raised) 40%, transparent); }
+
+/* cards / grid */
+.grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+.card{
+  border: 1px solid var(--border);
+  padding: 16px;
+  background: var(--bg-raised);
+}
+.card h3{ margin-top: 0; }
+.card p{ color: var(--text-dim); font-size: .9rem; margin-bottom: 0; }
+.card a.stretch{ position: absolute; inset: 0; }
+.card{ position: relative; }
+
+/* lists */
+ul, ol{ padding-left: 1.3em; color: var(--text); }
+li{ margin: .3em 0; }
+
+/* footer */
+footer{
+  border-top: 1px solid var(--border);
+  padding: 26px 0 50px;
+  color: var(--text-mute);
+  font-size: .84rem;
+}
+footer a{ color: var(--text-dim); }
+footer .foot-row{ display:flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+/* toc / sidebar nav for docs */
+.doc-layout{
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 40px;
+}
+.doc-nav{
+  position: sticky;
+  top: 70px;
+  align-self: start;
+  font-size: .85rem;
+}
+.doc-nav a{
+  display: block;
+  padding: 4px 0;
+  color: var(--text-dim);
+  border-bottom: none;
+}
+.doc-nav a:hover, .doc-nav a.active{ color: var(--accent); }
+.doc-section{ margin-bottom: 3em; padding-bottom: .5em; border-bottom: 1px dashed var(--border); }
+.doc-section:last-child{ border-bottom: none; }
+
+@media (max-width: 760px){
+  .doc-layout{ grid-template-columns: 1fr; }
+  .doc-nav{ position: static; display:flex; flex-wrap:wrap; gap: 4px 14px; margin-bottom: 20px; }
+  .hero h1{ font-size: 1.9rem; }
+}
+
+/* badges/tags */
+.tag{
+  display: inline-block;
+  font-size: .74rem;
+  color: var(--text-dim);
+  background: var(--tag-bg);
+  border: 1px solid var(--border);
+  padding: 1px 7px;
+  margin: 0 6px 6px 0;
+}
+
+/* examples explorer */
+.ex-toolbar{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.ex-toolbar input[type=text]{
+  font-family: var(--font);
+  font-size: .88rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 7px 10px;
+  flex: 1;
+  min-width: 180px;
+}
+.ex-toolbar input[type=text]:focus{ outline: none; border-color: var(--accent); }
+.ex-status{ font-size: .82rem; color: var(--text-mute); margin-bottom: 18px; }
+
+.ex-group{ margin-bottom: 30px; }
+.ex-group-title{
+  font-size: .86rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-mute);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+}
+.ex-item{
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  background: var(--bg-raised);
+}
+.ex-item summary{
+  cursor: pointer;
+  padding: 9px 12px;
+  font-size: .89rem;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  list-style: none;
+}
+.ex-item summary::-webkit-details-marker{ display:none; }
+.ex-item summary .marker{ color: var(--text-mute); width: 1em; display:inline-block; }
+.ex-item[open] summary .marker::before{ content: "-"; }
+.ex-item:not([open]) summary .marker::before{ content: "+"; }
+.ex-item summary .fname{ color: var(--text); font-weight: 700; }
+.ex-item summary .fpath{ color: var(--text-mute); font-size: .82rem; }
+.ex-item .ex-body{ border-top: 1px solid var(--border); padding: 12px; }
+.ex-item .ex-body pre{ margin-bottom: 8px; max-height: 480px; }
+.ex-item .ex-src-link{ font-size: .8rem; color: var(--text-mute); }
+.ex-loading{ color: var(--text-mute); font-size: .85rem; padding: 8px 0; }
+
+.note-box{
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  padding: 12px 14px;
+  font-size: .88rem;
+  color: var(--text-dim);
+  margin: 0 0 1.4em;
+}
+
+</style>
+<script>
+// theme toggle, persisted in localStorage
+(function () {
+  var KEY = "mj-site-theme";
+  var root = document.documentElement;
+
+  function apply(theme) {
+    root.setAttribute("data-theme", theme);
+    var btn = document.getElementById("theme-toggle");
+    if (btn) btn.textContent = theme === "dark" ? "[ light ]" : "[ dark ]";
+  }
+
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  if (!saved) {
+    saved = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark" : "light";
+  }
+  apply(saved);
+
+  document.addEventListener("DOMContentLoaded", function () {
+    var btn = document.getElementById("theme-toggle");
+    if (!btn) return;
+    apply(root.getAttribute("data-theme") || saved);
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      apply(cur);
+      try { localStorage.setItem(KEY, cur); } catch (e) {}
+    });
+  });
+})();
+
+</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a href="index.html" class="logo">mj</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="docs.html">Docs</a>
+      <a href="learn.html" class="active">Learn</a>
+      <a href="examples.html">Examples</a>
+      <a href="library.html">Library</a>
+      <a href="install.html">Install</a>
+      <a href="https://github.com/h-sys-2025/mj" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+    <button id="theme-toggle" aria-label="Toggle theme">[ dark ]</button>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="page-head">
+      <span class="kicker">examples/curriculum</span>
+      <h1>Learn mj</h1>
+      <p class="dim">
+        A suggested reading order through <code>examples/curriculum/</code>.
+        Run any file with <code>./build/mj examples/curriculum/&lt;file&gt;</code>.
+        Topic labels below are curated; the source for each step is fetched
+        live the same way the Examples page works, so it always matches what
+        is actually in the repository.
+      </p>
+    </div>
+
+    <table>
+      <thead><tr><th>Step</th><th>Topic</th></tr></thead>
+      <tbody>
+        <tr><td>values</td><td>nil, bool, int, hex, strings, print</td></tr>
+        <tr><td>operators</td><td>arithmetic, compare, logic, power, pipe</td></tr>
+        <tr><td>control</td><td>if / else, while, for, match, goto / label</td></tr>
+        <tr><td>functions</td><td>fun, return, nested, higher-order functions, args</td></tr>
+        <tr><td>arrays_tuples</td><td>arrays, push, index, tuples <code>(a, b)</code></td></tr>
+        <tr><td>maps_objects</td><td>maps, <code>object()</code>, <code>::</code> methods</td></tr>
+        <tr><td>strings_power</td><td>interpolation <code>${}</code>, substr, join, regex</td></tr>
+        <tr><td>refs_pointers</td><td><code>&amp;x</code>, <code>r^</code>, ref_at, setref, deref</td></tr>
+        <tr><td>types_strict</td><td><code>: int</code>, typed params, wrong-type errors</td></tr>
+        <tr><td>intrinsics</td><td><code>$zero</code>, <code>$typeof</code>, <code>$is_*</code>, <code>$line</code>, <code>$file</code></td></tr>
+        <tr><td>macros_include</td><td><code>#define</code>, <code>#macro</code>, <code>#include</code></td></tr>
+        <tr><td>errors</td><td>panic, catch, assert, <code>here()</code></td></tr>
+        <tr><td>async</td><td>async, await, spawn patterns</td></tr>
+        <tr><td>ffi_note</td><td>cimport, cbind, peek / poke</td></tr>
+        <tr><td>bbw_note</td><td>compile to <code>.bbw</code>, run without source</td></tr>
+        <tr><td>web_note</td><td>http helpers from C</td></tr>
+        <tr><td>shell</td><td>system, input, files</td></tr>
+        <tr><td>performance</td><td>loops, why the JIT matters</td></tr>
+        <tr><td>kitchen</td><td>everything mixed once</td></tr>
+        <tr><td>pattern_matching / patterns_more</td><td>match expressions</td></tr>
+        <tr><td>lambdas</td><td>anonymous functions</td></tr>
+        <tr><td>incdec</td><td>increment / decrement forms</td></tr>
+      </tbody>
+    </table>
+
+    <h2>The curriculum, live</h2>
+    <div class="ex-status" id="ex-status">looking for the curriculum files ...</div>
+    <div id="ex-container"></div>
+
+    <h2>After the curriculum</h2>
+    <p class="dim">
+      Once the curriculum is done, the rest of <code>examples/</code> covers
+      real programs: a Markov text generator, a bigint library, Pong with
+      SDL2, a minimal shell, C/C++/Odin interop demos, and more. See the
+      <a href="examples.html">full examples explorer</a>.
+    </p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <div>mj -- embeddable systems scripting language. Source on <a href="https://github.com/h-sys-2025/mj" target="_blank" rel="noopener">GitHub</a>.</div>
+    <div><a href="docs.html">Docs</a> | <a href="examples.html">Examples</a> | <a href="install.html">Install</a></div>
+  </div>
+</footer>
+
+<script>
+/*
+ * mj-explorer.js
+ *
+ * Walks the "examples/" folder (and every subdirectory) of the
+ * h-sys-2025/mj repository, and renders whatever it finds. Nothing here
+ * is a hardcoded list of example files -- run it again (reload the page,
+ * or press "Reload from GitHub") and it reflects whatever is in the
+ * repository at that moment.
+ *
+ * Listing and file content are fetched from two possible sources:
+ *   1. jsdelivr's public GitHub CDN (data.jsdelivr.com / cdn.jsdelivr.net)
+ *      -- tried first, generous rate limits, meant for exactly this
+ *   2. the GitHub API / raw.githubusercontent.com
+ *      -- fallback, limited to 60 unauthenticated requests per hour per IP
+ *
+ * The file listing is cached in localStorage for a few minutes so that
+ * reloading the page repeatedly does not repeatedly hit either source.
+ * The "Reload from GitHub" button bypasses that cache on purpose.
+ */
+
+var MJExplorer = (function () {
+  var REPO = "h-sys-2025/mj";
+  var USER = "h-sys-2025";
+  var NAME = "mj";
+  var BRANCH = "master";
+
+  var JSDELIVR_LIST_URL = "https://data.jsdelivr.com/v1/package/gh/" + USER + "/" + NAME + "@" + BRANCH + "/flat";
+  var JSDELIVR_RAW_BASE = "https://cdn.jsdelivr.net/gh/" + USER + "/" + NAME + "@" + BRANCH + "/";
+  var GITHUB_TREE_URL = "https://api.github.com/repos/" + REPO + "/git/trees/" + BRANCH + "?recursive=1";
+  var GITHUB_RAW_BASE = "https://raw.githubusercontent.com/" + REPO + "/" + BRANCH + "/";
+
+  var LIST_CACHE_KEY = "mj-explorer-filelist-v1";
+  var LIST_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+  var contentCache = {};
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // natural sort so 2_foo comes before 10_foo
+  function naturalCompare(a, b) {
+    var ax = [], bx = [];
+    a.replace(/(\d+)|(\D+)/g, function (_, d, s) { ax.push([d ? 1 : 0, d || s]); });
+    b.replace(/(\d+)|(\D+)/g, function (_, d, s) { bx.push([d ? 1 : 0, d || s]); });
+    while (ax.length && bx.length) {
+      var an = ax.shift(), bn = bx.shift();
+      var nt = an[0] - bn[0];
+      var cmp = (an[0] === 1) ? (parseInt(an[1], 10) - parseInt(bn[1], 10)) : an[1].localeCompare(bn[1]);
+      if (nt) return nt;
+      if (cmp) return cmp;
+    }
+    return ax.length - bx.length;
+  }
+
+  function langOf(path) {
+    if (/\.mj$/.test(path)) return "mj";
+    if (/\.(c|h|cpp|hpp)$/.test(path)) return "c";
+    if (/\.md$/.test(path)) return "note";
+    if (/\.toml$/.test(path)) return "toml";
+    return "text";
+  }
+
+  function readListCache() {
+    try {
+      var raw = localStorage.getItem(LIST_CACHE_KEY);
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      if (!parsed || !parsed.paths || (Date.now() - parsed.at) > LIST_CACHE_TTL_MS) return null;
+      return parsed.paths;
+    } catch (e) { return null; }
+  }
+
+  function writeListCache(paths) {
+    try {
+      localStorage.setItem(LIST_CACHE_KEY, JSON.stringify({ at: Date.now(), paths: paths }));
+    } catch (e) { /* ignore, e.g. storage disabled */ }
+  }
+
+  function clearListCache() {
+    try { localStorage.removeItem(LIST_CACHE_KEY); } catch (e) {}
+  }
+
+  function withTimeout(promise, ms) {
+    return new Promise(function (resolve, reject) {
+      var t = setTimeout(function () { reject(new Error("timed out")); }, ms);
+      promise.then(function (v) { clearTimeout(t); resolve(v); },
+                    function (e) { clearTimeout(t); reject(e); });
+    });
+  }
+
+  // source 1: jsdelivr flat file list
+  function listFromJsdelivr() {
+    return withTimeout(fetch(JSDELIVR_LIST_URL, { cache: "no-store" }), 12000)
+      .then(function (res) {
+        if (!res.ok) throw new Error("jsdelivr list responded " + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        var files = (data && data.files) || [];
+        var paths = files
+          .map(function (f) { return f.name.replace(/^\//, ""); })
+          .filter(function (p) { return p.indexOf("examples/") === 0; });
+        if (!paths.length) throw new Error("jsdelivr returned no examples/ files");
+        return paths.sort(naturalCompare);
+      });
+  }
+
+  // source 2: GitHub API recursive tree, fallback
+  function listFromGithubApi() {
+    return withTimeout(fetch(GITHUB_TREE_URL, { headers: { Accept: "application/vnd.github+json" } }), 12000)
+      .then(function (res) {
+        if (!res.ok) {
+          var remaining = res.headers.get("x-ratelimit-remaining");
+          if (res.status === 403 && remaining === "0") {
+            var reset = res.headers.get("x-ratelimit-reset");
+            var when = reset ? new Date(parseInt(reset, 10) * 1000).toLocaleTimeString() : "shortly";
+            throw new Error("GitHub API rate limit reached, resets around " + when);
+          }
+          throw new Error("GitHub API responded " + res.status);
+        }
+        return res.json();
+      })
+      .then(function (data) {
+        return (data.tree || [])
+          .filter(function (item) { return item.type === "blob" && item.path.indexOf("examples/") === 0; })
+          .map(function (item) { return item.path; })
+          .sort(naturalCompare);
+      });
+  }
+
+  // try jsdelivr first, then the GitHub API, then a cached list from a
+  // previous successful run (even if past its normal TTL) as a last resort
+  function fetchExampleFiles(opts) {
+    opts = opts || {};
+    if (!opts.force) {
+      var cached = readListCache();
+      if (cached) return Promise.resolve({ paths: cached, source: "cache" });
+    } else {
+      clearListCache();
+    }
+
+    return listFromJsdelivr()
+      .then(function (paths) {
+        writeListCache(paths);
+        return { paths: paths, source: "jsdelivr" };
+      })
+      .catch(function (jsdelivrErr) {
+        return listFromGithubApi()
+          .then(function (paths) {
+            writeListCache(paths);
+            return { paths: paths, source: "github api" };
+          })
+          .catch(function (githubErr) {
+            // last resort: a stale cache entry, if any, beats nothing
+            try {
+              var raw = localStorage.getItem(LIST_CACHE_KEY);
+              if (raw) {
+                var parsed = JSON.parse(raw);
+                if (parsed && parsed.paths && parsed.paths.length) {
+                  return { paths: parsed.paths, source: "stale cache", warning:
+                    "both jsdelivr and the GitHub API failed just now (" +
+                    (jsdelivrErr.message || jsdelivrErr) + " / " +
+                    (githubErr.message || githubErr) +
+                    "); showing a previously cached listing" };
+                }
+              }
+            } catch (e) {}
+            var combined = new Error(
+              "jsdelivr: " + (jsdelivrErr.message || jsdelivrErr) +
+              " -- github api: " + (githubErr.message || githubErr)
+            );
+            throw combined;
+          });
+      });
+  }
+
+  function fetchRawFrom(url) {
+    return withTimeout(fetch(url, { cache: "force-cache" }), 15000).then(function (res) {
+      if (!res.ok) throw new Error("responded " + res.status);
+      return res.text();
+    });
+  }
+
+  function fetchRaw(path) {
+    if (contentCache[path]) return Promise.resolve(contentCache[path]);
+    return fetchRawFrom(JSDELIVR_RAW_BASE + path)
+      .catch(function () { return fetchRawFrom(GITHUB_RAW_BASE + path); })
+      .then(function (text) {
+        contentCache[path] = text;
+        return text;
+      });
+  }
+
+  function baseName(path) {
+    return path.slice(path.lastIndexOf("/") + 1);
+  }
+
+  // build a <details class="ex-item"> element for one file
+  function buildItem(path) {
+    var details = document.createElement("details");
+    details.className = "ex-item";
+    details.setAttribute("data-path", path.toLowerCase());
+
+    var summary = document.createElement("summary");
+    summary.innerHTML =
+      '<span class="marker"></span>' +
+      '<span class="fname">' + escapeHtml(baseName(path)) + "</span>" +
+      '<span class="fpath">' + escapeHtml(path) + "</span>";
+    details.appendChild(summary);
+
+    var body = document.createElement("div");
+    body.className = "ex-body";
+    body.innerHTML = '<div class="ex-loading">not loaded yet -- expand to fetch the source</div>';
+    details.appendChild(body);
+
+    details.addEventListener("toggle", function () {
+      if (!details.open || details.dataset.loaded) return;
+      details.dataset.loaded = "1";
+      body.innerHTML = '<div class="ex-loading">loading ' + escapeHtml(path) + ' ...</div>';
+      fetchRaw(path)
+        .then(function (text) {
+          var lang = langOf(path);
+          var pre = document.createElement("pre");
+          var code = document.createElement("code");
+          code.className = "lang-" + lang;
+          code.textContent = text;
+          pre.appendChild(code);
+
+          var link = document.createElement("div");
+          link.className = "ex-src-link";
+          link.innerHTML = 'source: <a href="https://github.com/' + REPO + '/blob/' + BRANCH + '/' +
+            path + '" target="_blank" rel="noopener">' + escapeHtml(path) + "</a>";
+
+          body.innerHTML = "";
+          body.appendChild(pre);
+          body.appendChild(link);
+        })
+        .catch(function (err) {
+          body.innerHTML = '<div class="ex-loading">failed to load this file: ' +
+            escapeHtml(String(err.message || err)) + ". Try expanding it again in a moment.</div>";
+          details.dataset.loaded = "";
+        });
+    });
+
+    return details;
+  }
+
+  function groupTitle(label) {
+    if (label === "examples") return "examples/ (top level)";
+    return label + "/";
+  }
+
+  // group flat paths into { groupLabel: [path, ...] }
+  function groupPaths(paths) {
+    var groups = {};
+    var order = [];
+    paths.forEach(function (p) {
+      var rest = p.slice("examples/".length);
+      var slash = rest.indexOf("/");
+      var label = slash === -1 ? "examples" : "examples/" + rest.slice(0, slash);
+      if (!groups[label]) { groups[label] = []; order.push(label); }
+      groups[label].push(p);
+    });
+    order.sort(function (a, b) {
+      if (a === "examples") return -1;
+      if (b === "examples") return 1;
+      return naturalCompare(a, b);
+    });
+    return { groups: groups, order: order };
+  }
+
+  // render every group into `container`. `filterLabel`, if given, restricts
+  // rendering to just that one group (used by learn.html for curriculum only)
+  function renderAll(container, groups, order, filterLabel) {
+    container.innerHTML = "";
+    var labels = filterLabel ? order.filter(function (l) { return l === filterLabel; }) : order;
+    labels.forEach(function (label) {
+      var wrap = document.createElement("div");
+      wrap.className = "ex-group";
+      wrap.setAttribute("data-group", label);
+
+      var h = document.createElement("div");
+      h.className = "ex-group-title";
+      h.textContent = groupTitle(label) + "  (" + groups[label].length + " files)";
+      wrap.appendChild(h);
+
+      groups[label].forEach(function (path) {
+        wrap.appendChild(buildItem(path));
+      });
+
+      container.appendChild(wrap);
+    });
+  }
+
+  function applyFilter(container, query) {
+    query = query.trim().toLowerCase();
+    var groups = container.querySelectorAll(".ex-group");
+    groups.forEach(function (g) {
+      var items = g.querySelectorAll(".ex-item");
+      var visible = 0;
+      items.forEach(function (it) {
+        var match = !query || it.getAttribute("data-path").indexOf(query) !== -1;
+        it.style.display = match ? "" : "none";
+        if (match) visible++;
+      });
+      g.style.display = visible ? "" : "none";
+    });
+  }
+
+  return {
+    fetchExampleFiles: fetchExampleFiles,
+    groupPaths: groupPaths,
+    renderAll: renderAll,
+    applyFilter: applyFilter,
+    escapeHtml: escapeHtml
+  };
+})();
+
+</script>
+<script>
+(function () {
+  var container = document.getElementById("ex-container");
+  var status = document.getElementById("ex-status");
+
+  MJExplorer.fetchExampleFiles({})
+    .then(function (result) {
+      var g = MJExplorer.groupPaths(result.paths);
+      MJExplorer.renderAll(container, g.groups, g.order, "examples/curriculum");
+      var count = (g.groups["examples/curriculum"] || []).length;
+      status.textContent = count + " files found under examples/curriculum/.";
+      if (result.warning) status.textContent += " (" + result.warning + ")";
+    })
+    .catch(function (err) {
+      status.textContent = "could not list the curriculum right now: " + (err.message || err) + ".";
+    });
+})();
+</script>
+
+</body>
+</html>

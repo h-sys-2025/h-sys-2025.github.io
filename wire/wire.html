@@ -101,7 +101,7 @@
   }
   .field{display:flex; flex-direction:column; gap:6px;}
   .field label{font-size:12px; color:var(--paper-dim);}
-  .field input{
+  .field input, .field select{
     background:var(--ink-2);
     border:1px solid var(--hairline-strong);
     color:var(--paper);
@@ -109,8 +109,9 @@
     border-radius:var(--radius);
     font-size:14px;
     font-family:inherit;
+    width: 100%;
   }
-  .field input:focus{outline:2px solid var(--signal); outline-offset:0; border-color:var(--signal);}
+  .field input:focus, .field select:focus{outline:2px solid var(--signal); outline-offset:0; border-color:var(--signal);}
   .auth-form{display:flex; flex-direction:column; gap:14px; max-width:360px;}
   .primary-btn{
     background:var(--signal);
@@ -167,6 +168,39 @@
   .char-count.warn{color:var(--signal);}
   .char-count.over{color:var(--danger);}
 
+  /* ---------- search ---------- */
+  .search-panel {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--hairline);
+    background: rgba(27, 33, 38, 0.5);
+  }
+  .search-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .search-full {
+    grid-column: span 2;
+  }
+  .search-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  .secondary-btn {
+    background: transparent;
+    border: 1px solid var(--hairline-strong);
+    color: var(--paper-dim);
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    font-size: 13px;
+  }
+  .secondary-btn:hover {
+    border-color: var(--paper);
+    color: var(--paper);
+  }
+
   /* ---------- feed ---------- */
   .feed{flex:1;}
   .empty-state{
@@ -186,7 +220,16 @@
   @keyframes fadeIn{ from{opacity:0; transform:translateY(-4px);} to{opacity:1; transform:translateY(0);} }
   .post-body{flex:1; min-width:0;}
   .post-head{display:flex; align-items:baseline; gap:8px; margin-bottom:4px; flex-wrap:wrap;}
-  .post-user{font-weight:600; font-size:14px;}
+  .post-user{font-weight:600; font-size:14px; display: flex; align-items: center; gap: 6px;}
+  .aura-badge {
+    font-size: 11px;
+    color: var(--signal);
+    background: var(--signal-dim);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+  }
   .post-time{font-size:12px; color:var(--paper-dim);}
   .post-content{
     font-family:'Fraunces',serif;
@@ -234,7 +277,9 @@
 
   @media (max-width:480px){
     header{padding:14px 16px;}
-    .compose, .post, .auth-panel{padding-left:16px; padding-right:16px;}
+    .compose, .post, .auth-panel, .search-panel{padding-left:16px; padding-right:16px;}
+    .search-grid { grid-template-columns: 1fr; }
+    .search-full { grid-column: span 1; }
   }
 </style>
 </head>
@@ -251,6 +296,29 @@
 
   <div id="authPanel"></div>
   <div id="composePanel"></div>
+
+  <!-- Search Section -->
+  <div class="search-panel" id="searchPanel" style="display:none;">
+    <div class="search-grid">
+      <div class="field search-full">
+        <label for="searchTopic">Topic / Keyword</label>
+        <input id="searchTopic" type="text" placeholder="Search dispatches..." />
+      </div>
+      <div class="field">
+        <label for="searchUser">User</label>
+        <input id="searchUser" type="text" placeholder="@username" />
+      </div>
+      <div class="field">
+        <label for="searchDate">From Date</label>
+        <input id="searchDate" type="date" />
+      </div>
+    </div>
+    <div class="search-actions">
+      <button class="secondary-btn" id="clearSearchBtn">Clear</button>
+      <button class="primary-btn" id="applySearchBtn" style="padding: 8px 14px; font-size: 13px;">Filter Wire</button>
+    </div>
+  </div>
+
   <div class="feed" id="feed"></div>
   <div id="emptyState"></div>
 
@@ -265,20 +333,15 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    flowType: 'pkce',       // exchanges a one-time code for a session server-side,
-                             // instead of putting access/refresh tokens in the URL
+    flowType: 'pkce',
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true
   }
 });
 
-// where confirmation / magic-link emails should send people back to
 const REDIRECT_URL = window.location.origin + window.location.pathname;
 
-// If we just landed here from a confirmation/magic link, scrub the
-// token/code out of the address bar once Supabase has consumed it,
-// so it doesn't linger in browser history.
 if (window.location.hash.includes('access_token') || window.location.search.includes('code=')) {
   window.addEventListener('load', () => {
     setTimeout(() => {
@@ -287,25 +350,37 @@ if (window.location.hash.includes('access_token') || window.location.search.incl
   });
 }
 
-const POSTS = '"microblog-posts"';
-const PROFILES = '"microblog-profiles"';
-const LIKES = '"microblog-likes"';
-
 let session = null;
 let profile = null;
-let posts = [];          // [{id,user_id,content,created_at, username}]
-let likeCounts = {};     // post_id -> count
-let myLikes = new Set(); // post_id set liked by current user
+let posts = [];
+let likeCounts = {};
+let myLikes = new Set();
+let auraMap = {};        // userId -> auraScore
 
 const sessionBox = document.getElementById('sessionBox');
 const authPanel = document.getElementById('authPanel');
 const composePanel = document.getElementById('composePanel');
+const searchPanel = document.getElementById('searchPanel');
 const feedEl = document.getElementById('feed');
 const emptyStateEl = document.getElementById('emptyState');
 
-let authMode = 'signin'; // or 'signup'
+// Search Elements
+const searchTopic = document.getElementById('searchTopic');
+const searchUser = document.getElementById('searchUser');
+const searchDate = document.getElementById('searchDate');
+const applySearchBtn = document.getElementById('applySearchBtn');
+const clearSearchBtn = document.getElementById('clearSearchBtn');
+
+let authMode = 'signin';
 let authMsg = null;
 let authBusy = false;
+
+// Active Filters
+let activeFilters = {
+  topic: '',
+  user: '',
+  date: ''
+};
 
 function initials(name){
   return (name || '?').slice(0,2).toUpperCase();
@@ -353,20 +428,14 @@ function isVideoUrl(url){
 }
 
 function parseContentWithMedia(text){
-  // First escape the entire text to prevent XSS
   const escaped = escapeHtml(text);
-  
-  // Match URLs (http, https, or protocol-relative)
   const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/g;
-  
-  // Replace URLs with media elements or plain text
   return escaped.replace(urlRegex, (match) => {
     if (isImageUrl(match)){
       return `<img src="${match}" alt="" loading="lazy" class="post-media" />`;
     } else if (isVideoUrl(match)){
       return `<video src="${match}" controls class="post-media" loading="lazy" playsinline></video>`;
     }
-    // For other URLs, just return as escaped text (no linking per user request)
     return match;
   });
 }
@@ -446,7 +515,6 @@ function renderAuthPanel(){
       authMode = 'signin';
       renderAuthPanel();
     }
-    // if session came back immediately, onAuthStateChange handles the rest
   };
 }
 
@@ -501,23 +569,50 @@ function renderCompose(){
 
 // ---------------- render: feed ----------------
 function renderFeed(){
-  if (posts.length === 0){
-    emptyStateEl.innerHTML = `<div class="empty-state"><div class="mark">The wire is quiet.</div>${session ? 'Send the first dispatch above.' : 'Sign in to see it come alive.'}</div>`;
+  // Apply filters
+  let displayPosts = posts.filter(p => {
+    // Topic Filter
+    if (activeFilters.topic) {
+      const lowerContent = p.content.toLowerCase();
+      const lowerTopic = activeFilters.topic.toLowerCase();
+      if (!lowerContent.includes(lowerTopic)) return false;
+    }
+    // User Filter
+    if (activeFilters.user) {
+      const lowerUser = p.username.toLowerCase();
+      const lowerFilter = activeFilters.user.toLowerCase().replace('@', '');
+      if (!lowerUser.includes(lowerFilter)) return false;
+    }
+    // Date Filter
+    if (activeFilters.date) {
+      const postDate = new Date(p.created_at).toISOString().split('T')[0];
+      if (postDate < activeFilters.date) return false;
+    }
+    return true;
+  });
+
+  if (displayPosts.length === 0){
+    emptyStateEl.innerHTML = `<div class="empty-state"><div class="mark">The wire is quiet.</div>${posts.length > 0 ? 'No matches found for your search.' : (session ? 'Send the first dispatch above.' : 'Sign in to see it come alive.')}</div>`;
     feedEl.innerHTML = '';
     return;
   }
   emptyStateEl.innerHTML = '';
 
-  feedEl.innerHTML = posts.map(p => {
+  feedEl.innerHTML = displayPosts.map(p => {
     const liked = myLikes.has(p.id);
     const count = likeCounts[p.id] || 0;
     const mine = session && p.user_id === session.user.id;
+    const aura = auraMap[p.user_id] !== undefined ? auraMap[p.user_id] : 0;
+
     return `
       <article class="post" data-id="${p.id}">
         <div class="avatar">${initials(p.username)}</div>
         <div class="post-body">
           <div class="post-head">
-            <span class="post-user">@${escapeHtml(p.username)}</span>
+            <span class="post-user">
+              @${escapeHtml(p.username)}
+              <span class="aura-badge" title="Average Likes per Post">⚡ ${aura}</span>
+            </span>
             <span class="post-time">${timeAgo(p.created_at)}</span>
           </div>
           <div class="post-content">${parseContentWithMedia(p.content)}</div>
@@ -573,11 +668,20 @@ async function deletePost(postId){
 async function loadProfile(userId){
   let { data, error } = await supabase.from('microblog-profiles').select('*').eq('id', userId).maybeSingle();
   if (!data && !error){
-    // trigger may not have finished yet — brief retry
     await new Promise(r => setTimeout(r, 700));
     ({ data, error } = await supabase.from('microblog-profiles').select('*').eq('id', userId).maybeSingle());
   }
   profile = data || { id: userId, username: (session.user.email||'dispatcher').split('@')[0] };
+}
+
+async function loadAura() {
+  // Fetch aura scores for all users who have posted
+  const { data, error } = await supabase.from('user_aura_view').select('user_id, aura_score');
+  if (!error && data) {
+    data.forEach(row => {
+      auraMap[row.user_id] = row.aura_score;
+    });
+  }
 }
 
 async function loadPosts(){
@@ -597,6 +701,7 @@ async function loadPosts(){
 
   posts = postRows.map(p => ({ ...p, username: profilesById[p.user_id] || 'dispatcher' }));
   await loadLikes();
+  await loadAura(); // Load aura after posts to know which users exist
 }
 
 async function loadLikes(){
@@ -612,6 +717,30 @@ async function loadLikes(){
   });
 }
 
+// ---------------- Search Logic ----------------
+function setupSearch() {
+  if (session) {
+    searchPanel.style.display = 'block';
+  } else {
+    searchPanel.style.display = 'none';
+  }
+
+  applySearchBtn.onclick = () => {
+    activeFilters.topic = searchTopic.value.trim();
+    activeFilters.user = searchUser.value.trim();
+    activeFilters.date = searchDate.value;
+    renderFeed();
+  };
+
+  clearSearchBtn.onclick = () => {
+    searchTopic.value = '';
+    searchUser.value = '';
+    searchDate.value = '';
+    activeFilters = { topic: '', user: '', date: '' };
+    renderFeed();
+  };
+}
+
 // ---------------- realtime ----------------
 let channel = null;
 function subscribeRealtime(){
@@ -620,6 +749,7 @@ function subscribeRealtime(){
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'microblog-posts' }, async (payload) => {
       const { data: prof } = await supabase.from('microblog-profiles').select('username').eq('id', payload.new.user_id).maybeSingle();
       posts.unshift({ ...payload.new, username: prof?.username || 'dispatcher' });
+      // Refresh aura if needed, though for simplicity we might just leave it until reload
       renderFeed();
     })
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'microblog-posts' }, (payload) => {
@@ -628,6 +758,7 @@ function subscribeRealtime(){
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'microblog-likes' }, async () => {
       await loadLikes();
+      await loadAura(); // Aura changes when likes change
       renderFeed();
     })
     .subscribe();
@@ -644,6 +775,7 @@ async function refreshAll(){
   renderSessionBox();
   renderAuthPanel();
   renderCompose();
+  setupSearch();
   renderFeed();
   subscribeRealtime();
 }

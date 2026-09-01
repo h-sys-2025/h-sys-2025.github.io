@@ -428,32 +428,13 @@ function isValidSecureUrl(urlString) {
   }
 }
 
-function isImageUrl(url) {
-  if (!isValidSecureUrl(url)) return false;
-  const path = new URL(url).pathname.toLowerCase();
-  return /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(path);
-}
-
-function isVideoUrl(url) {
-  if (!isValidSecureUrl(url)) return false;
-  const path = new URL(url).pathname.toLowerCase();
-  const hostname = new URL(url).hostname.toLowerCase();
-
-  // Direct video files
-  if (/\.(mp4|webm|ogg)$/i.test(path)) return true;
-
-  // Embeddable platforms (simplified for safety, usually require embed codes but we stick to direct links for now)
-  if (hostname.includes('vimeo.com') || hostname.includes('youtube.com')) return true;
-
-  return false;
-}
-
-// --- SECURITY: SAFE PARSER ---
+// --- UPDATED: SAFE PARSER ---
 function parseContentWithMedia(text){
   // 1. Escape everything first to prevent XSS
   const escaped = escapeHtml(text);
 
   // 2. Find URLs safely
+  // Note: We look for http/https URLs that don't contain spaces or common break characters
   const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/g;
 
   return escaped.replace(urlRegex, (match) => {
@@ -463,22 +444,47 @@ function parseContentWithMedia(text){
       cleanUrl = cleanUrl.slice(0, -1);
     }
 
+    // Case 1: Direct Image File -> Render Image
     if (isImageUrl(cleanUrl)){
       return `<img src="${cleanUrl}" alt="User image" loading="lazy" class="post-media" referrerpolicy="no-referrer" />`;
-    } else if (isVideoUrl(cleanUrl)){
-      // For YouTube/Vimeo, we would normally need an iframe embed,
-      // but for safety/simplicity we only render direct video files or simple links here.
-      // If it's a direct MP4/WebM:
-      if (cleanUrl.match(/\.(mp4|webm|ogg)$/i)) {
+    }
+
+    // Case 2: Direct Video File -> Render Video
+    else if (isVideoUrl(cleanUrl)){
+       if (cleanUrl.match(/\.(mp4|webm|ogg)$/i)) {
          return `<video src="${cleanUrl}" controls class="post-media" loading="lazy" playsinline></video>`;
       }
-      // Otherwise just leave as text link to be safe
     }
-    // Return original escaped text if not a safe media file
+
+    // Case 3: Valid Safe Link -> Render Clickable Anchor
+    // We check isValidSecureUrl again to ensure we only link to trusted hosts
+    if (isValidSecureUrl(cleanUrl)) {
+      return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--signal); text-decoration:underline;">${cleanUrl}</a>`;
+    }
+
+    // Case 4: Unsafe or Unknown URL -> Return original escaped text (plain text)
     return match;
   });
 }
 
+// --- UPDATED: Helper Functions ---
+
+function isImageUrl(url) {
+  if (!isValidSecureUrl(url)) return false;
+  const path = new URL(url).pathname.toLowerCase();
+  // Strict check for image extensions
+  return /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(path);
+}
+
+function isVideoUrl(url) {
+  if (!isValidSecureUrl(url)) return false;
+  const path = new URL(url).pathname.toLowerCase();
+
+  // Direct video files
+  if (/\.(mp4|webm|ogg)$/i.test(path)) return true;
+
+  return false;
+}
 // ---------------- render: session box ----------------
 function renderSessionBox(){
   if (session && profile){

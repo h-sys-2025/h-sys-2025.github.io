@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wire — a dispatch board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14181C;
+    --ink-2:#1B2126;
+    --paper:#EDEAE3;
+    --paper-dim:#A9AEA6;
+    --hairline: rgba(237,234,227,0.12);
+    --hairline-strong: rgba(237,234,227,0.22);
+    --signal:#E8A33D;
+    --signal-dim: rgba(232,163,61,0.15);
+    --wire-green:#6FA88A;
+    --danger:#C96A56;
+    --radius: 3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+  button{font-family:inherit;cursor:pointer;}
+
+  .app{
+    max-width:640px;
+    margin:0 auto;
+    min-height:100vh;
+    border-left:1px solid var(--hairline);
+    border-right:1px solid var(--hairline);
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ---------- header ---------- */
+  header{
+    position:sticky;
+    top:0;
+    z-index:10;
+    background:rgba(20,24,28,0.92);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--hairline);
+    padding:18px 24px;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .brand{display:flex; align-items:baseline; gap:10px;}
+  .brand-mark{
+    font-family:'Fraunces',serif;
+    font-weight:700;
+    font-size:26px;
+    letter-spacing:-0.01em;
+  }
+  .brand-tag{
+    font-size:12px;
+    color:var(--paper-dim);
+    font-style:italic;
+    font-family:'Fraunces',serif;
+  }
+  .session-box{font-size:13px; color:var(--paper-dim); display:flex; align-items:center; gap:10px;}
+  .session-box strong{color:var(--paper); font-weight:600;}
+  .btn-link{
+    background:none;border:none;color:var(--signal);
+    font-size:13px;font-weight:600;padding:0;
+  }
+  .btn-link:hover{text-decoration:underline;}
+
+  /* ---------- auth panel ---------- */
+  .auth-panel{
+    padding:40px 24px;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+  .auth-panel h1{
+    font-family:'Fraunces',serif;
+    font-size:30px;
+    font-weight:600;
+    margin:0 0 4px 0;
+    line-height:1.15;
+  }
+  .auth-panel p.lede{
+    color:var(--paper-dim);
+    font-size:15px;
+    margin:0 0 10px 0;
+    max-width:46ch;
+  }
+  .field{display:flex; flex-direction:column; gap:6px;}
+  .field label{font-size:12px; color:var(--paper-dim);}
+  .field input{
+    background:var(--ink-2);
+    border:1px solid var(--hairline-strong);
+    color:var(--paper);
+    padding:11px 12px;
+    border-radius:var(--radius);
+    font-size:14px;
+    font-family:inherit;
+  }
+  .field input:focus{outline:2px solid var(--signal); outline-offset:0; border-color:var(--signal);}
+  .auth-form{display:flex; flex-direction:column; gap:14px; max-width:360px;}
+  .primary-btn{
+    background:var(--signal);
+    color:#1B1204;
+    border:none;
+    padding:11px 18px;
+    border-radius:var(--radius);
+    font-weight:700;
+    font-size:14px;
+    letter-spacing:0.01em;
+  }
+  .primary-btn:hover{filter:brightness(1.08);}
+  .primary-btn:disabled{opacity:0.5; cursor:default;}
+  .auth-toggle{font-size:13px; color:var(--paper-dim);}
+  .auth-msg{font-size:13px; padding:10px 12px; border-radius:var(--radius); border:1px solid var(--hairline-strong);}
+  .auth-msg.error{color:var(--danger); border-color:var(--danger);}
+  .auth-msg.ok{color:var(--wire-green); border-color:var(--wire-green);}
+
+  /* ---------- compose ---------- */
+  .compose{
+    padding:20px 24px;
+    border-bottom:1px solid var(--hairline);
+    display:flex;
+    gap:14px;
+  }
+  .avatar{
+    width:40px;height:40px;
+    border-radius:50%;
+    background:var(--ink-2);
+    border:1px solid var(--hairline-strong);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:15px;
+    color:var(--signal);
+    flex-shrink:0;
+  }
+  .compose-body{flex:1; display:flex; flex-direction:column; gap:10px;}
+  .compose textarea{
+    width:100%;
+    background:transparent;
+    border:none;
+    color:var(--paper);
+    font-family:'Fraunces',serif;
+    font-size:18px;
+    line-height:1.4;
+    resize:none;
+    min-height:56px;
+  }
+  .compose textarea:focus{outline:none;}
+  .compose textarea::placeholder{color:var(--paper-dim);}
+  .compose-footer{display:flex; align-items:center; justify-content:space-between;}
+  .char-count{font-size:12px; color:var(--paper-dim); font-variant-numeric:tabular-nums;}
+  .char-count.warn{color:var(--signal);}
+  .char-count.over{color:var(--danger);}
+
+  /* ---------- feed ---------- */
+  .feed{flex:1;}
+  .empty-state{
+    padding:60px 24px;
+    text-align:center;
+    color:var(--paper-dim);
+  }
+  .empty-state .mark{font-family:'Fraunces',serif; font-size:20px; color:var(--paper); margin-bottom:6px;}
+
+  .post{
+    padding:18px 24px;
+    border-bottom:1px solid var(--hairline);
+    display:flex;
+    gap:14px;
+    animation:fadeIn 0.35s ease;
+  }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(-4px);} to{opacity:1; transform:translateY(0);} }
+  .post-body{flex:1; min-width:0;}
+  .post-head{display:flex; align-items:baseline; gap:8px; margin-bottom:4px; flex-wrap:wrap;}
+  .post-user{font-weight:600; font-size:14px;}
+  .post-time{font-size:12px; color:var(--paper-dim);}
+  .post-content{
+    font-family:'Fraunces',serif;
+    font-size:16.5px;
+    line-height:1.5;
+    color:var(--paper);
+    white-space:pre-wrap;
+    word-wrap:break-word;
+    margin:0 0 10px 0;
+  }
+  .post-actions{display:flex; align-items:center; gap:18px;}
+  .like-btn{
+    background:none;border:none;color:var(--paper-dim);
+    display:flex;align-items:center;gap:6px;
+    font-size:13px; padding:2px 0;
+  }
+  .like-btn svg{width:15px;height:15px; stroke:currentColor; fill:none;}
+  .like-btn.liked{color:var(--signal);}
+  .like-btn.liked svg{fill:var(--signal); stroke:var(--signal);}
+  .like-btn:hover{color:var(--signal);}
+  .delete-btn{
+    background:none;border:none;color:var(--paper-dim);
+    font-size:12px; padding:2px 0;
+  }
+  .delete-btn:hover{color:var(--danger);}
+
+  footer{
+    padding:22px 24px 40px;
+    text-align:center;
+    color:var(--paper-dim);
+    font-size:12px;
+  }
+
+  ::selection{background:var(--signal-dim);}
+
+  @media (max-width:480px){
+    header{padding:14px 16px;}
+    .compose, .post, .auth-panel{padding-left:16px; padding-right:16px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <span class="brand-mark">Wire</span>
+      <span class="brand-tag">a dispatch board</span>
+    </div>
+    <div class="session-box" id="sessionBox"></div>
+  </header>
+
+  <div id="authPanel"></div>
+  <div id="composePanel"></div>
+  <div class="feed" id="feed"></div>
+  <div id="emptyState"></div>
+
+  <footer>Dispatches are public and permanent until withdrawn by their author.</footer>
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const SUPABASE_URL = 'https://vgytjiqlscdmhwpkfrox.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZneXRqaXFsc2NkbWh3cGtmcm94Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyNzIwMjAsImV4cCI6MjEwMzg0ODAyMH0.RFsU37jwVyDTTqNHEQAvcjrvnQQG_67uGaDInENT1Z0';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const POSTS = '"microblog-posts"';
+const PROFILES = '"microblog-profiles"';
+const LIKES = '"microblog-likes"';
+
+let session = null;
+let profile = null;
+let posts = [];          // [{id,user_id,content,created_at, username}]
+let likeCounts = {};     // post_id -> count
+let myLikes = new Set(); // post_id set liked by current user
+
+const sessionBox = document.getElementById('sessionBox');
+const authPanel = document.getElementById('authPanel');
+const composePanel = document.getElementById('composePanel');
+const feedEl = document.getElementById('feed');
+const emptyStateEl = document.getElementById('emptyState');
+
+let authMode = 'signin'; // or 'signup'
+let authMsg = null;
+let authBusy = false;
+
+function initials(name){
+  return (name || '?').slice(0,2).toUpperCase();
+}
+
+function timeAgo(iso){
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h';
+  if (diff < 604800) return Math.floor(diff/86400) + 'd';
+  return new Date(iso).toLocaleDateString(undefined, { month:'short', day:'numeric' });
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// ---------------- render: session box ----------------
+function renderSessionBox(){
+  if (session && profile){
+    sessionBox.innerHTML = `<span>signed on as <strong>@${escapeHtml(profile.username)}</strong></span><button class="btn-link" id="signOutBtn">sign off</button>`;
+    document.getElementById('signOutBtn').onclick = async () => {
+      await supabase.auth.signOut();
+    };
+  } else {
+    sessionBox.innerHTML = '';
+  }
+}
+
+// ---------------- render: auth panel ----------------
+function renderAuthPanel(){
+  if (session){ authPanel.innerHTML = ''; return; }
+
+  authPanel.innerHTML = `
+    <div class="auth-panel">
+      <h1>${authMode === 'signin' ? 'Welcome back to the wire.' : 'Open a line on the wire.'}</h1>
+      <p class="lede">${authMode === 'signin'
+        ? 'Sign in to read the board and send your own dispatches.'
+        : 'Create an account to start sending dispatches. Pick any email — you\'ll be assigned a handle automatically.'}</p>
+      ${authMsg ? `<div class="auth-msg ${authMsg.type}">${escapeHtml(authMsg.text)}</div>` : ''}
+      <form class="auth-form" id="authForm">
+        <div class="field">
+          <label for="authEmail">email</label>
+          <input id="authEmail" type="email" required autocomplete="email" />
+        </div>
+        <div class="field">
+          <label for="authPassword">password</label>
+          <input id="authPassword" type="password" required minlength="6" autocomplete="${authMode === 'signin' ? 'current-password' : 'new-password'}" />
+        </div>
+        <button class="primary-btn" type="submit" ${authBusy ? 'disabled' : ''}>
+          ${authBusy ? 'working…' : (authMode === 'signin' ? 'Sign in' : 'Sign up')}
+        </button>
+        <div class="auth-toggle">
+          ${authMode === 'signin' ? "New to the wire?" : "Already have a line?"}
+          <button type="button" class="btn-link" id="authToggleBtn">${authMode === 'signin' ? 'Sign up' : 'Sign in'}</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  document.getElementById('authToggleBtn').onclick = () => {
+    authMode = authMode === 'signin' ? 'signup' : 'signin';
+    authMsg = null;
+    renderAuthPanel();
+  };
+
+  document.getElementById('authForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    authBusy = true; authMsg = null; renderAuthPanel();
+
+    let result;
+    if (authMode === 'signin'){
+      result = await supabase.auth.signInWithPassword({ email, password });
+    } else {
+      result = await supabase.auth.signUp({ email, password });
+    }
+
+    authBusy = false;
+    if (result.error){
+      authMsg = { type:'error', text: result.error.message };
+      renderAuthPanel();
+    } else if (authMode === 'signup' && !result.data.session){
+      authMsg = { type:'ok', text: 'Account created. Check your email to confirm, then sign in.' };
+      authMode = 'signin';
+      renderAuthPanel();
+    }
+    // if session came back immediately, onAuthStateChange handles the rest
+  };
+}
+
+// ---------------- render: compose ----------------
+function renderCompose(){
+  if (!session || !profile){ composePanel.innerHTML = ''; return; }
+
+  composePanel.innerHTML = `
+    <div class="compose">
+      <div class="avatar">${initials(profile.username)}</div>
+      <div class="compose-body">
+        <textarea id="composeText" placeholder="What's moving on the wire?" maxlength="400" rows="2"></textarea>
+        <div class="compose-footer">
+          <span class="char-count" id="charCount">280</span>
+          <button class="primary-btn" id="sendBtn">Send dispatch</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const textarea = document.getElementById('composeText');
+  const charCount = document.getElementById('charCount');
+  const sendBtn = document.getElementById('sendBtn');
+
+  textarea.addEventListener('input', () => {
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
+    const remaining = 280 - textarea.value.length;
+    charCount.textContent = remaining;
+    charCount.className = 'char-count' + (remaining < 0 ? ' over' : remaining < 30 ? ' warn' : '');
+  });
+
+  sendBtn.onclick = async () => {
+    const content = textarea.value.trim();
+    if (!content || content.length > 280) return;
+    sendBtn.disabled = true;
+    const { error } = await supabase.from('microblog-posts').insert({
+      user_id: session.user.id,
+      content
+    });
+    sendBtn.disabled = false;
+    if (error){
+      alert('Could not send dispatch: ' + error.message);
+      return;
+    }
+    textarea.value = '';
+    textarea.style.height = 'auto';
+    charCount.textContent = '280';
+    charCount.className = 'char-count';
+  };
+}
+
+// ---------------- render: feed ----------------
+function renderFeed(){
+  if (posts.length === 0){
+    emptyStateEl.innerHTML = `<div class="empty-state"><div class="mark">The wire is quiet.</div>${session ? 'Send the first dispatch above.' : 'Sign in to see it come alive.'}</div>`;
+    feedEl.innerHTML = '';
+    return;
+  }
+  emptyStateEl.innerHTML = '';
+
+  feedEl.innerHTML = posts.map(p => {
+    const liked = myLikes.has(p.id);
+    const count = likeCounts[p.id] || 0;
+    const mine = session && p.user_id === session.user.id;
+    return `
+      <article class="post" data-id="${p.id}">
+        <div class="avatar">${initials(p.username)}</div>
+        <div class="post-body">
+          <div class="post-head">
+            <span class="post-user">@${escapeHtml(p.username)}</span>
+            <span class="post-time">${timeAgo(p.created_at)}</span>
+          </div>
+          <p class="post-content">${escapeHtml(p.content)}</p>
+          <div class="post-actions">
+            <button class="like-btn ${liked ? 'liked' : ''}" data-like="${p.id}" ${session ? '' : 'disabled'}>
+              <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.2 2 4.5 5.6 4c2-.3 3.7.7 6.4 3 2.7-2.3 4.4-3.3 6.4-3 3.6.5 5.2 4.2 3.6 7.7C19.5 16.4 12 21 12 21z"/></svg>
+              <span>${count > 0 ? count : ''}</span>
+            </button>
+            ${mine ? `<button class="delete-btn" data-delete="${p.id}">withdraw</button>` : ''}
+          </div>
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  feedEl.querySelectorAll('[data-like]').forEach(btn => {
+    btn.onclick = () => toggleLike(btn.getAttribute('data-like'));
+  });
+  feedEl.querySelectorAll('[data-delete]').forEach(btn => {
+    btn.onclick = () => deletePost(btn.getAttribute('data-delete'));
+  });
+}
+
+async function toggleLike(postId){
+  if (!session) return;
+  const liked = myLikes.has(postId);
+  if (liked){
+    myLikes.delete(postId);
+    likeCounts[postId] = Math.max(0, (likeCounts[postId]||1) - 1);
+    renderFeed();
+    const { error } = await supabase.from('microblog-likes')
+      .delete().eq('post_id', postId).eq('user_id', session.user.id);
+    if (error){ await loadLikes(); renderFeed(); }
+  } else {
+    myLikes.add(postId);
+    likeCounts[postId] = (likeCounts[postId]||0) + 1;
+    renderFeed();
+    const { error } = await supabase.from('microblog-likes')
+      .insert({ post_id: postId, user_id: session.user.id });
+    if (error){ await loadLikes(); renderFeed(); }
+  }
+}
+
+async function deletePost(postId){
+  if (!confirm('Withdraw this dispatch from the wire?')) return;
+  const { error } = await supabase.from('microblog-posts').delete().eq('id', postId);
+  if (error){ alert('Could not withdraw: ' + error.message); return; }
+  posts = posts.filter(p => p.id !== postId);
+  renderFeed();
+}
+
+// ---------------- data loading ----------------
+async function loadProfile(userId){
+  let { data, error } = await supabase.from('microblog-profiles').select('*').eq('id', userId).maybeSingle();
+  if (!data && !error){
+    // trigger may not have finished yet — brief retry
+    await new Promise(r => setTimeout(r, 700));
+    ({ data, error } = await supabase.from('microblog-profiles').select('*').eq('id', userId).maybeSingle());
+  }
+  profile = data || { id: userId, username: (session.user.email||'dispatcher').split('@')[0] };
+}
+
+async function loadPosts(){
+  const { data: postRows, error } = await supabase
+    .from('microblog-posts')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (error){ console.error(error); return; }
+
+  const userIds = [...new Set(postRows.map(p => p.user_id))];
+  let profilesById = {};
+  if (userIds.length){
+    const { data: profs } = await supabase.from('microblog-profiles').select('id, username').in('id', userIds);
+    (profs||[]).forEach(pr => profilesById[pr.id] = pr.username);
+  }
+
+  posts = postRows.map(p => ({ ...p, username: profilesById[p.user_id] || 'dispatcher' }));
+  await loadLikes();
+}
+
+async function loadLikes(){
+  const postIds = posts.map(p => p.id);
+  likeCounts = {};
+  myLikes = new Set();
+  if (postIds.length === 0) return;
+
+  const { data: likeRows } = await supabase.from('microblog-likes').select('post_id, user_id').in('post_id', postIds);
+  (likeRows||[]).forEach(l => {
+    likeCounts[l.post_id] = (likeCounts[l.post_id]||0) + 1;
+    if (session && l.user_id === session.user.id) myLikes.add(l.post_id);
+  });
+}
+
+// ---------------- realtime ----------------
+let channel = null;
+function subscribeRealtime(){
+  if (channel) supabase.removeChannel(channel);
+  channel = supabase.channel('wire-feed')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'microblog-posts' }, async (payload) => {
+      const { data: prof } = await supabase.from('microblog-profiles').select('username').eq('id', payload.new.user_id).maybeSingle();
+      posts.unshift({ ...payload.new, username: prof?.username || 'dispatcher' });
+      renderFeed();
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'microblog-posts' }, (payload) => {
+      posts = posts.filter(p => p.id !== payload.old.id);
+      renderFeed();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'microblog-likes' }, async () => {
+      await loadLikes();
+      renderFeed();
+    })
+    .subscribe();
+}
+
+// ---------------- boot ----------------
+async function refreshAll(){
+  if (session){
+    await loadProfile(session.user.id);
+  } else {
+    profile = null;
+  }
+  await loadPosts();
+  renderSessionBox();
+  renderAuthPanel();
+  renderCompose();
+  renderFeed();
+  subscribeRealtime();
+}
+
+supabase.auth.onAuthStateChange((_event, newSession) => {
+  session = newSession;
+  refreshAll();
+});
+
+supabase.auth.getSession().then(({ data }) => {
+  session = data.session;
+  refreshAll();
+});
+</script>
+</body>
+</html>

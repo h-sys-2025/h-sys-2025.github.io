@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.sh; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://vgytjiqlscdmhwpkfrox.supabase.co wss://vgytjiqlscdmhwpkfrox.supabase.co https://esm.sh;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.sh; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; media-src https:; connect-src 'self' https://vgytjiqlscdmhwpkfrox.supabase.co wss://vgytjiqlscdmhwpkfrox.supabase.co https://esm.sh;">
 <style>
   :root{
     --ink:#14181C;
@@ -197,6 +197,16 @@
     word-wrap:break-word;
     margin:0 0 10px 0;
   }
+  .post-content img, .post-content video{
+    max-width:100%;
+    border-radius:var(--radius);
+    margin:8px 0;
+    display:block;
+    border:1px solid var(--hairline-strong);
+  }
+  .post-content video{
+    background:#000;
+  }
   .post-actions{display:flex; align-items:center; gap:18px;}
   .like-btn{
     background:none;border:none;color:var(--paper-dim);
@@ -314,6 +324,51 @@ function escapeHtml(str){
   const d = document.createElement('div');
   d.textContent = str;
   return d.innerHTML;
+}
+
+function isImageUrl(url){
+  const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|avif|bmp)(\?.*)?$/i;
+  const imageHosts = ['i.imgur.com', 'i.redd.it', 'cdn.discordapp.com', 'media.giphy.com', 'media.tenor.com'];
+  try {
+    const parsed = new URL(url);
+    const hasImageExt = imageExtensions.test(parsed.pathname);
+    const isImageHost = imageHosts.some(host => parsed.hostname.includes(host));
+    return hasImageExt || isImageHost;
+  } catch {
+    return false;
+  }
+}
+
+function isVideoUrl(url){
+  const videoExtensions = /\.(mp4|webm|ogg|mov|mkv)(\?.*)?$/i;
+  const videoHosts = ['vimeo.com', 'youtube.com', 'youtu.be'];
+  try {
+    const parsed = new URL(url);
+    const hasVideoExt = videoExtensions.test(parsed.pathname);
+    const isVideoHost = videoHosts.some(host => parsed.hostname.includes(host));
+    return hasVideoExt || isVideoHost;
+  } catch {
+    return false;
+  }
+}
+
+function parseContentWithMedia(text){
+  // First escape the entire text to prevent XSS
+  const escaped = escapeHtml(text);
+  
+  // Match URLs (http, https, or protocol-relative)
+  const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/g;
+  
+  // Replace URLs with media elements or plain text
+  return escaped.replace(urlRegex, (match) => {
+    if (isImageUrl(match)){
+      return `<img src="${match}" alt="" loading="lazy" class="post-media" />`;
+    } else if (isVideoUrl(match)){
+      return `<video src="${match}" controls class="post-media" loading="lazy" playsinline></video>`;
+    }
+    // For other URLs, just return as escaped text (no linking per user request)
+    return match;
+  });
 }
 
 // ---------------- render: session box ----------------
@@ -465,7 +520,7 @@ function renderFeed(){
             <span class="post-user">@${escapeHtml(p.username)}</span>
             <span class="post-time">${timeAgo(p.created_at)}</span>
           </div>
-          <p class="post-content">${escapeHtml(p.content)}</p>
+          <div class="post-content">${parseContentWithMedia(p.content)}</div>
           <div class="post-actions">
             <button class="like-btn ${liked ? 'liked' : ''}" data-like="${p.id}" ${session ? '' : 'disabled'}>
               <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.2 2 4.5 5.6 4c2-.3 3.7.7 6.4 3 2.7-2.3 4.4-3.3 6.4-3 3.6.5 5.2 4.2 3.6 7.7C19.5 16.4 12 21 12 21z"/></svg>

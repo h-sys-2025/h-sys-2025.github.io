@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quotelang Book — a practical guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ---------- tokens ---------- */
+:root{
+  --ink:      #10161c;
+  --panel:    #19222b;
+  --panel-2:  #212c37;
+  --rule:     #2b3844;
+  --paper:    #ece5d3;
+  --dim:      #8b95a3;
+  --dim-2:    #5f6b78;
+
+  --teal:     #5fb8a6;
+  --amber:    #dba75c;
+  --coral:    #d8695f;
+  --blue:     #7fa8c9;
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --sidebar-w: 248px;
+}
+
+*{ box-sizing:border-box; }
+html{ scroll-behavior:smooth; }
+
+body{
+  margin:0;
+  background:var(--ink);
+  color:var(--paper);
+  font-family:var(--font-body);
+  font-size:16px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+
+::selection{ background:var(--teal); color:var(--ink); }
+
+a{ color:inherit; text-decoration:none; }
+
+/* ---------- layout shell ---------- */
+.shell{
+  display:grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  min-height:100vh;
+}
+
+/* ---------- table of contents ---------- */
+.toc{
+  position:sticky;
+  top:0;
+  height:100vh;
+  overflow-y:auto;
+  padding:2rem 1.5rem 2rem;
+  border-right:1px solid var(--rule);
+  background:
+    linear-gradient(180deg, rgba(95,184,166,0.05), rgba(95,184,166,0) 220px),
+    var(--panel);
+}
+
+.toc-head{
+  display:flex;
+  align-items:center;
+  gap:.7rem;
+  margin-bottom:2rem;
+}
+.toc-mark{
+  font-family:var(--font-display);
+  font-size:1.6rem;
+  color:var(--teal);
+  line-height:1;
+}
+.toc-title{
+  margin:0;
+  font-family:var(--font-display);
+  font-weight:600;
+  font-size:1.05rem;
+  letter-spacing:.01em;
+}
+.toc-sub{
+  margin:0;
+  font-size:.72rem;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--dim);
+}
+
+.toc-list{
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  gap:.15rem;
+}
+.toc-list a{
+  display:flex;
+  gap:.6rem;
+  align-items:baseline;
+  padding:.4rem .5rem;
+  border-radius:6px;
+  font-size:.88rem;
+  color:var(--dim);
+  transition:background .15s ease, color .15s ease;
+}
+.toc-list a:hover, .toc-list a.active{
+  background:var(--panel-2);
+  color:var(--paper);
+}
+.toc-list a b{
+  font-family:var(--font-mono);
+  font-weight:500;
+  font-size:.75rem;
+  color:var(--dim-2);
+  min-width:1.1rem;
+}
+.toc-list a:hover b, .toc-list a.active b{ color:var(--teal); }
+
+.toc-foot{
+  margin-top:2rem;
+  padding-top:1rem;
+  border-top:1px solid var(--rule);
+}
+.toc-foot p{
+  margin:0;
+  font-family:var(--font-mono);
+  font-size:.72rem;
+  color:var(--dim-2);
+}
+
+.nav-toggle{
+  display:none;
+}
+
+/* ---------- page / hero ---------- */
+.page{ min-width:0; }
+
+.hero{
+  padding:5rem 4rem 3.5rem;
+  border-bottom:1px solid var(--rule);
+  background:
+    radial-gradient(600px 300px at 85% -10%, rgba(127,168,201,0.10), transparent),
+    var(--ink);
+}
+.hero-eyebrow{
+  margin:0 0 .3rem;
+  font-family:var(--font-mono);
+  font-size:.78rem;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--dim);
+}
+.hero-title{
+  margin:0;
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:clamp(3rem, 7vw, 5.4rem);
+  line-height:.98;
+  letter-spacing:-.01em;
+}
+.hero-dot{ color:var(--teal); }
+.hero-tagline{
+  margin:1.1rem 0 0;
+  max-width:40ch;
+  font-family:var(--font-display);
+  font-weight:400;
+  font-style:italic;
+  font-size:1.3rem;
+  color:var(--paper);
+  opacity:.88;
+}
+.tie{ color:var(--coral); font-style:normal; opacity:.85; }
+
+.hero-badges{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.5rem;
+  margin-top:1.6rem;
+}
+.badge{
+  font-family:var(--font-mono);
+  font-size:.75rem;
+  padding:.35rem .65rem;
+  border-radius:999px;
+  border:1px solid var(--rule);
+  color:var(--dim);
+}
+.badge-teal{ border-color:rgba(95,184,166,.35); color:var(--teal); }
+.badge-blue{ border-color:rgba(127,168,201,.35); color:var(--blue); }
+.badge-coral{ border-color:rgba(216,105,95,.35); color:var(--coral); }
+.badge-amber{ border-color:rgba(219,167,92,.35); color:var(--amber); }
+
+/* ---------- diagnostic panel (signature element) ---------- */
+.diagnostic-panel{
+  margin-top:2.6rem;
+  max-width:640px;
+  border:1px solid var(--rule);
+  border-radius:10px;
+  overflow:hidden;
+  background:var(--panel);
+  box-shadow:0 20px 50px -25px rgba(0,0,0,.6);
+}
+.diagnostic-bar{
+  display:flex;
+  align-items:center;
+  gap:.55rem;
+  padding:.6rem .9rem;
+  border-bottom:1px solid var(--rule);
+  background:var(--panel-2);
+}
+.diagnostic-dot{
+  width:8px; height:8px; border-radius:50%;
+  background:var(--coral);
+  box-shadow:0 0 0 3px rgba(216,105,95,.15);
+}
+.diagnostic-file{
+  font-family:var(--font-mono);
+  font-size:.78rem;
+  color:var(--paper);
+}
+.diagnostic-caption{
+  margin-left:auto;
+  font-family:var(--font-mono);
+  font-size:.7rem;
+  color:var(--dim-2);
+}
+.diagnostic-body{
+  margin:0;
+  padding:1.1rem 1.15rem 1.3rem;
+  min-height:5.4em;
+  font-family:var(--font-mono);
+  font-size:.86rem;
+  line-height:1.65;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+.diag-error{ color:var(--coral); }
+.diag-warn{ color:var(--amber); }
+.diag-help{ color:var(--blue); }
+.diag-note{ color:var(--dim); }
+.diag-caret{ color:var(--coral); }
+.diag-cursor{
+  display:inline-block;
+  width:.5em;
+  background:var(--paper);
+  animation:blink 1s step-end infinite;
+}
+@keyframes blink{ 50%{ opacity:0; } }
+
+.hero-run{ margin-top:2rem; }
+.hero-run-label{
+  margin:0 0 .5rem;
+  font-family:var(--font-mono);
+  font-size:.72rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--dim-2);
+}
+
+/* ---------- chapters ---------- */
+.chapter{
+  padding:3.4rem 4rem;
+  border-bottom:1px solid var(--rule);
+  max-width:880px;
+}
+.chapter-num{
+  margin:0 0 .4rem;
+  font-family:var(--font-mono);
+  font-size:.78rem;
+  color:var(--dim-2);
+  letter-spacing:.08em;
+}
+.chapter h2{
+  margin:0 0 1rem;
+  font-family:var(--font-display);
+  font-weight:600;
+  font-size:2.1rem;
+  letter-spacing:-.01em;
+}
+.chapter h3{
+  margin:2rem 0 .8rem;
+  font-family:var(--font-body);
+  font-weight:600;
+  font-size:.98rem;
+  color:var(--paper);
+}
+.chapter h3:first-of-type{ margin-top:1.6rem; }
+.chapter p{ color:var(--paper); opacity:.92; max-width:68ch; }
+.chapter p.note{
+  font-size:.94rem;
+  color:var(--dim);
+  opacity:1;
+  max-width:66ch;
+}
+.chapter p.caption{
+  margin:1.6rem 0 .6rem;
+  font-family:var(--font-mono);
+  font-size:.72rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--dim-2);
+}
+.dim{ color:var(--dim); font-weight:400; }
+
+/* ---------- code ---------- */
+.code-block{
+  margin:1rem 0;
+  padding:1.1rem 1.3rem;
+  border-radius:8px;
+  border:1px solid var(--rule);
+  background:var(--panel);
+  overflow-x:auto;
+  font-family:var(--font-mono);
+  font-size:.87rem;
+  line-height:1.7;
+}
+.code-block code{ font-family:inherit; }
+.code-bash{ color:var(--blue); }
+.code-error{ background:#241a1b; border-color:rgba(216,105,95,.3); }
+
+code.inline{
+  font-family:var(--font-mono);
+  font-size:.86em;
+  background:var(--panel-2);
+  border:1px solid var(--rule);
+  padding:.08em .38em;
+  border-radius:4px;
+  color:var(--paper);
+  white-space:nowrap;
+}
+
+/* syntax token colors (applied by script.js) */
+.tok-kw{ color:var(--teal); }
+.tok-type{ color:var(--blue); }
+.tok-str{ color:var(--amber); }
+.tok-attr{ color:var(--coral); }
+.tok-intr{ color:var(--blue); }
+.tok-cmt{ color:var(--dim-2); font-style:italic; }
+.tok-num{ color:var(--amber); }
+.tok-punct{ color:var(--dim); }
+
+/* ---------- lists / chips / tables ---------- */
+.spec-list{
+  margin:1rem 0;
+  padding-left:0;
+  list-style:none;
+  display:flex;
+  flex-direction:column;
+  gap:.55rem;
+  max-width:66ch;
+}
+.spec-list li{
+  padding-left:1.1rem;
+  position:relative;
+  color:var(--paper);
+  opacity:.92;
+  font-size:.96rem;
+}
+.spec-list li::before{
+  content:"—";
+  position:absolute;
+  left:0;
+  color:var(--teal);
+}
+
+.chip-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.45rem;
+  margin:.8rem 0 0;
+}
+.chip{
+  font-family:var(--font-mono);
+  font-size:.8rem;
+  padding:.3rem .6rem;
+  border-radius:6px;
+  border:1px solid var(--rule);
+  background:var(--panel);
+  color:var(--blue);
+}
+.mono-chips .chip{ color:var(--teal); }
+
+.spec-table{
+  width:100%;
+  border-collapse:collapse;
+  margin:1rem 0;
+  font-size:.92rem;
+}
+.spec-table th, .spec-table td{
+  text-align:left;
+  padding:.6rem .8rem;
+  border-bottom:1px solid var(--rule);
+}
+.spec-table th{
+  font-family:var(--font-mono);
+  font-size:.72rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--dim-2);
+  font-weight:500;
+}
+.spec-table td{ color:var(--paper); opacity:.92; }
+.ref-table td:first-child{ color:var(--dim); opacity:1; white-space:nowrap; }
+
+.warn-code{
+  font-family:var(--font-mono);
+  color:var(--amber);
+  font-size:.85em;
+}
+
+/* stdlib grid */
+.stdlib-grid{
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:.8rem;
+  margin-top:1.2rem;
+}
+.stdlib-card{
+  padding:1rem 1.1rem;
+  border:1px solid var(--rule);
+  border-radius:8px;
+  background:var(--panel);
+}
+.stdlib-mod{
+  margin:0 0 .3rem;
+  font-family:var(--font-mono);
+  font-size:.85rem;
+  color:var(--teal);
+}
+.stdlib-desc{
+  margin:0;
+  font-size:.86rem;
+  color:var(--dim);
+}
+.opt-tag{
+  margin-left:.5rem;
+  font-family:var(--font-mono);
+  font-size:.65rem;
+  color:var(--amber);
+  border:1px solid rgba(219,167,92,.35);
+  padding:.05em .4em;
+  border-radius:999px;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.stdlib-optional{ border-style:dashed; }
+
+/* mistakes */
+.mistake-list{
+  margin:1rem 0 0;
+  padding-left:1.3rem;
+  display:flex;
+  flex-direction:column;
+  gap:.8rem;
+  max-width:66ch;
+}
+.mistake-list li{
+  color:var(--paper);
+  opacity:.92;
+  font-size:.96rem;
+  padding-left:.3rem;
+}
+.mistake-list li::marker{
+  font-family:var(--font-mono);
+  color:var(--coral);
+}
+.mistake-head{ color:var(--paper); font-weight:600; opacity:1; }
+
+/* colophon */
+.colophon{
+  padding:2.4rem 4rem 4rem;
+  max-width:880px;
+}
+.colophon p{
+  margin:0;
+  font-size:.85rem;
+  color:var(--dim-2);
+}
+
+/* ---------- focus ---------- */
+a:focus-visible, button:focus-visible{
+  outline:2px solid var(--teal);
+  outline-offset:2px;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 900px){
+  .shell{ grid-template-columns:1fr; }
+  .toc{
+    position:fixed;
+    inset:0 25% 0 0;
+    z-index:40;
+    transform:translateX(-100%);
+    transition:transform .25s ease;
+    box-shadow:20px 0 40px rgba(0,0,0,.4);
+  }
+  .toc.open{ transform:translateX(0); }
+  .nav-toggle{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:4px;
+    position:fixed;
+    top:1rem; left:1rem;
+    z-index:50;
+    width:38px; height:38px;
+    border-radius:8px;
+    border:1px solid var(--rule);
+    background:var(--panel);
+  }
+  .nav-toggle span{
+    display:block;
+    height:2px;
+    margin:0 8px;
+    background:var(--paper);
+  }
+  .hero{ padding:5.5rem 1.4rem 2.6rem; }
+  .chapter{ padding:2.6rem 1.4rem; }
+  .colophon{ padding:2rem 1.4rem 3rem; }
+  .stdlib-grid{ grid-template-columns:1fr; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  html{ scroll-behavior:auto; }
+  .diag-cursor{ animation:none; }
+  .toc{ transition:none; }
+}
+
+</style>
+</head>
+<body>
+
+<button class="nav-toggle" id="navToggle" aria-label="Toggle table of contents" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+
+<div class="shell">
+
+  <nav class="toc" id="toc">
+    <div class="toc-head">
+      <span class="toc-mark">§</span>
+      <div>
+        <p class="toc-title">Quotelang</p>
+        <p class="toc-sub">Book</p>
+      </div>
+    </div>
+    <ol class="toc-list">
+      <li><a href="#ch1"><b>1</b> Hello</a></li>
+      <li><a href="#ch2"><b>2</b> Modules &amp; imports</a></li>
+      <li><a href="#ch3"><b>3</b> Types</a></li>
+      <li><a href="#ch4"><b>4</b> Functions</a></li>
+      <li><a href="#ch5"><b>5</b> Globals</a></li>
+      <li><a href="#ch6"><b>6</b> Control flow</a></li>
+      <li><a href="#ch7"><b>7</b> Metaprogramming</a></li>
+      <li><a href="#ch8"><b>8</b> Pipes</a></li>
+      <li><a href="#ch9"><b>9</b> C‑FFI</a></li>
+      <li><a href="#ch10"><b>10</b> Package manager</a></li>
+      <li><a href="#ch11"><b>11</b> Tooling &amp; diagnostics</a></li>
+      <li><a href="#ch12"><b>12</b> Stdlib overview</a></li>
+      <li><a href="#ch13"><b>13</b> Quick reference</a></li>
+      <li><a href="#ch14"><b>14</b> Common mistakes</a></li>
+    </ol>
+    <div class="toc-foot">
+      <p>compiles to portable C99</p>
+    </div>
+  </nav>
+
+  <main class="page">
+
+    <header class="hero">
+      <p class="hero-eyebrow">A practical guide to</p>
+      <h1 class="hero-title">Quotelang<span class="hero-dot">.</span></h1>
+      <p class="hero-tagline">Strongly typed <span class="tie">~~</span> effects‑aware <span class="tie">~~</span> compiles to portable C99.</p>
+
+      <div class="hero-badges">
+        <span class="badge badge-teal">pure by default</span>
+        <span class="badge badge-blue">static types</span>
+        <span class="badge badge-coral">effects tracked</span>
+        <span class="badge badge-amber">→ C99</span>
+      </div>
+
+      <div class="diagnostic-panel" id="diagPanel" aria-label="Sample compiler diagnostic, cycling">
+        <div class="diagnostic-bar">
+          <span class="diagnostic-dot"></span>
+          <span class="diagnostic-file">qlc</span>
+          <span class="diagnostic-caption">the compiler explains itself</span>
+        </div>
+        <pre class="diagnostic-body" id="diagBody"></pre>
+      </div>
+
+      <div class="hero-run">
+        <p class="hero-run-label">try it in one line</p>
+        <pre class="code-block code-bash"><code class="ql-bash">qlc new myapp &amp;&amp; cd myapp &amp;&amp; qlc run</code></pre>
+      </div>
+    </header>
+
+    <!-- 1 -->
+    <section class="chapter" id="ch1">
+      <p class="chapter-num">01</p>
+      <h2>Hello</h2>
+      <p>Every program starts with a module declaration, whatever it imports, and one function marked with the effects it performs. Here, <code class="inline">main</code> is allowed to touch <code class="inline">io</code> — nothing else — and the compiler holds it to that.</p>
+      <pre class="code-block"><code class="ql">Module main.
+import module core.system.io as io.
+@[io]
+main :: [String] -> Int
+main args =
+  io.println("hello").
+  return 0.</code></pre>
+      <p class="caption">Build &amp; run</p>
+      <pre class="code-block code-bash"><code class="ql-bash">qlc -I stdlib -run main.ql
+qlc new myapp && cd myapp && qlc run</code></pre>
+    </section>
+
+    <!-- 2 -->
+    <section class="chapter" id="ch2">
+      <p class="chapter-num">02</p>
+      <h2>Modules &amp; imports</h2>
+      <p>Imports bind a foreign module's functions under a short alias, pull in a neighbour from the same package tree, or bring in a type without its implementation.</p>
+      <pre class="code-block"><code class="ql">Module main.
+import module core.system.io as io.
+import module core.system.fs as fs.
+import relative module util.mathy as math.
+import type core.system.uuid as UUID.</code></pre>
+      <ul class="spec-list">
+        <li><code class="inline">import module path as alias</code> <span class="tie">~~</span> bind functions under <code class="inline">alias.</code></li>
+        <li><code class="inline">import relative module path</code> <span class="tie">~~</span> same package tree</li>
+        <li><code class="inline">import type path as Name</code> <span class="tie">~~</span> type‑only import</li>
+      </ul>
+    </section>
+
+    <!-- 3 -->
+    <section class="chapter" id="ch3">
+      <p class="chapter-num">03</p>
+      <h2>Types</h2>
+
+      <h3>Built‑ins</h3>
+      <div class="chip-row">
+        <span class="chip">Int</span><span class="chip">UInt</span><span class="chip">Float</span><span class="chip">Double</span><span class="chip">Bool</span><span class="chip">String</span><span class="chip">Char</span><span class="chip">Unit</span><span class="chip">None</span><span class="chip">Map</span><span class="chip">Buf</span>
+      </div>
+
+      <h3>Pointers &amp; arrays</h3>
+      <pre class="code-block"><code class="ql">p : *Int = &x.
+v := *p.
+xs : [Int] = [1, 2, 3].
+grid : [[Char]] = [[65], [66]].</code></pre>
+
+      <h3>Structs &amp; generics</h3>
+      <pre class="code-block"><code class="ql">type Option(T when ($any)) = struct {
+  data :: T.
+  has_data :: Bool = (data != $zero(T) ? True : False).
+}.
+mutable o := Option(Int) { data: 7 }.
+empty := Option(Int) {}.</code></pre>
+      <p class="note">Diagnostics show pretty types, like <code class="inline">Option([String])</code>, never internal names.</p>
+
+      <h3>Enums <span class="dim">(any underlying type)</span></h3>
+      <pre class="code-block"><code class="ql">type Color = enum (String) {
+  Red := "red",
+  Green := "green"
+}.
+type Status = enum (Int) {
+  Ok := 0,
+  Err := 1
+}.</code></pre>
+
+      <h3>Either / Result‑style</h3>
+      <pre class="code-block"><code class="ql">type MyResult = Either String Int.</code></pre>
+
+      <h3>Type macros</h3>
+      <pre class="code-block"><code class="ql">#define List(T) = [T]
+#define Grid(T) = [[T]]
+xs : List(Int) = [1, 2, 3].</code></pre>
+    </section>
+
+    <!-- 4 -->
+    <section class="chapter" id="ch4">
+      <p class="chapter-num">04</p>
+      <h2>Functions</h2>
+      <pre class="code-block"><code class="ql">@[pure]
+add :: Int -> Int -> Int
+add a b = return a + b.
+
+@[io]
+main :: [String] -> Int
+main args = return 0.</code></pre>
+
+      <h3>Higher‑order functions</h3>
+      <pre class="code-block"><code class="ql">double :: Int -> Int
+double n = return n * 2.
+
+apply :: (Int -> Int) -> Int -> Int
+apply f x = return f(x).
+
+n := apply(double, 21).</code></pre>
+      <p class="note">Any parameter or return types are allowed inside a function type <code class="inline">(A -> B)</code>.</p>
+
+      <h3>Attributes <span class="dim">(decorators)</span></h3>
+      <table class="spec-table">
+        <thead><tr><th>Attribute</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">pure</code></td><td>no side effects</td></tr>
+          <tr><td><code class="inline">io</code> / <code class="inline">IO</code></td><td>may perform I/O</td></tr>
+          <tr><td><code class="inline">alloc</code></td><td>may allocate</td></tr>
+          <tr><td><code class="inline">throws</code></td><td>may fail / None</td></tr>
+          <tr><td><code class="inline">unsafe</code></td><td>relaxes some checks</td></tr>
+          <tr><td><code class="inline">suspends</code></td><td>coroutine; use <code class="inline">await</code></td></tr>
+          <tr><td><code class="inline">static</code></td><td>not exported</td></tr>
+          <tr><td><code class="inline">mutable</code> / <code class="inline">global</code> / <code class="inline">var</code></td><td>module‑level mutable global</td></tr>
+          <tr><td><code class="inline">c("sym")</code></td><td>bind C symbol</td></tr>
+          <tr><td><code class="inline">link("lib")</code></td><td>link library</td></tr>
+        </tbody>
+      </table>
+      <p class="note">Unknown attributes are errors, with a suggestion attached:</p>
+      <pre class="code-block code-error"><code class="ql-error">error[E0110]: unknown attribute @[globalsss]
+  = help: did you mean @[global]?</code></pre>
+    </section>
+
+    <!-- 5 -->
+    <section class="chapter" id="ch5">
+      <p class="chapter-num">05</p>
+      <h2>Globals <span class="dim">(module‑level variables)</span></h2>
+      <pre class="code-block"><code class="ql">@[mutable]
+prg : String = "".
+mutable counter := 0.
+@[mutable]
+prg :: String = "".   -- also ok</code></pre>
+      <p class="caption">Assign from any function</p>
+      <pre class="code-block"><code class="ql">prg = args[0].
+io.println("running ${prg}").</code></pre>
+      <p class="note">Immutable globals warn. Assigning without <code class="inline">@[mutable]</code> is an error, with a fix hint attached. Write a function first, then try to assign to it, and Quotelang explains exactly why:</p>
+      <pre class="code-block code-error"><code class="ql-error">error[E0522]: cannot assign to "prg" ~~ it is a function, not a variable
+  = help: declare a mutable global instead: @[mutable] prg : String = "".
+  = note: functions use: name :: Args -> Ret;  globals use: name : Type = value</code></pre>
+    </section>
+
+    <!-- 6 -->
+    <section class="chapter" id="ch6">
+      <p class="chapter-num">06</p>
+      <h2>Control flow</h2>
+
+      <h3>if / when / do</h3>
+      <pre class="code-block"><code class="ql">if cond { ... } else { ... }.
+when (cond) { ... }.
+do { ... }.</code></pre>
+
+      <h3>while</h3>
+      <pre class="code-block"><code class="ql">mutable i := 0.
+while (i < 10) {
+  i = i + 1.
+}.</code></pre>
+      <p class="note">The condition must be <code class="inline">Bool</code>. <code class="inline">break</code> and <code class="inline">continue</code> both work as expected.</p>
+
+      <h3>for</h3>
+      <pre class="code-block"><code class="ql">for x in args {
+  io.println(x).
+}.</code></pre>
+
+      <h3>Ternary <span class="dim">(C‑style)</span></h3>
+      <pre class="code-block"><code class="ql">pick := x > y ? x : y.
+flag := x > 0 ? True : False.</code></pre>
+
+      <h3>Labels &amp; jmp</h3>
+      <pre class="code-block"><code class="ql">loop:.
+  when (x > 3) { jmp done. }.
+  x = x + 1.
+  jmp loop.
+done:.
+  io.println("done").
+y > 0 ? jmp positive : noop.</code></pre>
+      <p class="note"><code class="inline">noop</code> does nothing, and warns <span class="warn-code">W0903</span> so an accidental no‑op is always visible.</p>
+      <p class="note"><strong>Jump safety</strong> is checked at compile time: duplicate labels, undefined targets, infinite <code class="inline">L:. jmp L</code>, cross‑jump cycles, and useless fall‑through jumps are all caught.</p>
+    </section>
+
+    <!-- 7 -->
+    <section class="chapter" id="ch7">
+      <p class="chapter-num">07</p>
+      <h2>Metaprogramming</h2>
+
+      <h3>Intrinsics</h3>
+      <div class="chip-row mono-chips">
+        <span class="chip">$zero(T)</span><span class="chip">$default(T)</span><span class="chip">$sizeof</span><span class="chip">$alignof</span><span class="chip">$name_of</span><span class="chip">$is_struct</span><span class="chip">$is_numeric</span><span class="chip">$is_pointer</span><span class="chip">$is_array</span><span class="chip">$is_string</span><span class="chip">$is_same</span><span class="chip">$assert_type</span><span class="chip">$unreachable</span><span class="chip">$todo</span><span class="chip">$debug_type</span><span class="chip">$offsetof</span><span class="chip">$bitwidth</span><span class="chip">$max_value</span><span class="chip">$min_value</span><span class="chip">$len_of</span>
+      </div>
+
+      <h3>Value macros</h3>
+      <pre class="code-block"><code class="ql">macro MAX(a, b) = a + b - a.</code></pre>
+
+      <h3>Type macros</h3>
+      <pre class="code-block"><code class="ql">#define List(T) = [T]</code></pre>
+    </section>
+
+    <!-- 8 -->
+    <section class="chapter" id="ch8">
+      <p class="chapter-num">08</p>
+      <h2>Pipes</h2>
+      <pre class="code-block"><code class="ql">n := args->len.
+s := name->to_upper().</code></pre>
+      <p class="note">A pipe desugars to <code class="inline">method(receiver, args...)</code>, resolved against the imported stdlib.</p>
+    </section>
+
+    <!-- 9 -->
+    <section class="chapter" id="ch9">
+      <p class="chapter-num">09</p>
+      <h2>C‑FFI</h2>
+      <pre class="code-block"><code class="ql">@[c("puts")]
+puts :: String -> Int</code></pre>
+      <p class="note">Optional SDL2 bindings live under <code class="inline">stdlib/core/sdl.ql</code>.</p>
+    </section>
+
+    <!-- 10 -->
+    <section class="chapter" id="ch10">
+      <p class="chapter-num">10</p>
+      <h2>Package manager</h2>
+      <pre class="code-block code-bash"><code class="ql-bash">qlc new myapp     # scaffold ql.toml + src/main.ql
+qlc build         # compile
+qlc run           # compile & run</code></pre>
+      <p class="note"><code class="inline">ql.toml</code> selects the entry module and dependency roots (<code class="inline">-I</code>).</p>
+    </section>
+
+    <!-- 11 -->
+    <section class="chapter" id="ch11">
+      <p class="chapter-num">11</p>
+      <h2>Tooling &amp; diagnostics</h2>
+      <ul class="spec-list">
+        <li>Accurate <code class="inline">file:line:col</code> with caret underlines</li>
+        <li>Pretty generic types in messages, like <code class="inline">Option([String])</code></li>
+        <li>Suggestions for typos in attributes and types</li>
+        <li>Safety IR checks for pointers, calls, and jump cycles</li>
+      </ul>
+    </section>
+
+    <!-- 12 -->
+    <section class="chapter" id="ch12">
+      <p class="chapter-num">12</p>
+      <h2>Stdlib overview</h2>
+      <div class="stdlib-grid">
+        <div class="stdlib-card">
+          <p class="stdlib-mod">core.system.io</p>
+          <p class="stdlib-desc">println, input</p>
+        </div>
+        <div class="stdlib-card">
+          <p class="stdlib-mod">core.system.fs</p>
+          <p class="stdlib-desc">path, read/write</p>
+        </div>
+        <div class="stdlib-card">
+          <p class="stdlib-mod">core.system.net</p>
+          <p class="stdlib-desc">sockets — listen, accept, send, recv</p>
+        </div>
+        <div class="stdlib-card">
+          <p class="stdlib-mod">core.system.string / slice / array</p>
+          <p class="stdlib-desc">text &amp; collections</p>
+        </div>
+        <div class="stdlib-card stdlib-optional">
+          <p class="stdlib-mod">core.sdl <span class="opt-tag">optional</span></p>
+          <p class="stdlib-desc">games, via C‑FFI</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13 -->
+    <section class="chapter" id="ch13">
+      <p class="chapter-num">13</p>
+      <h2>Quick reference</h2>
+      <table class="spec-table ref-table">
+        <thead><tr><th>Construct</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td>Module</td><td><code class="inline">Module main.</code></td></tr>
+          <tr><td>Import</td><td><code class="inline">import module core.system.io as io.</code></td></tr>
+          <tr><td>Function</td><td><code class="inline">name :: A -> B</code> / <code class="inline">name x = return ...</code></td></tr>
+          <tr><td>Local</td><td><code class="inline">x := 1.</code> / <code class="inline">mutable x := 1.</code></td></tr>
+          <tr><td>Global</td><td><code class="inline">@[mutable] g : String = "".</code></td></tr>
+          <tr><td>Struct</td><td><code class="inline">type P = struct { name :: String. }.</code></td></tr>
+          <tr><td>Generic</td><td><code class="inline">type Box(T) = struct { v :: T. }.</code></td></tr>
+          <tr><td>Enum</td><td><code class="inline">type E = enum (Int) { A := 1 }.</code></td></tr>
+          <tr><td>Ternary</td><td><code class="inline">c ? a : b</code></td></tr>
+          <tr><td>Label</td><td><code class="inline">loop:.</code></td></tr>
+          <tr><td>Jump</td><td><code class="inline">jmp loop.</code></td></tr>
+          <tr><td>No‑op</td><td><code class="inline">noop.</code></td></tr>
+          <tr><td>Pipe</td><td><code class="inline">xs->len</code></td></tr>
+          <tr><td>Intrinsic</td><td><code class="inline">$zero(Int)</code></td></tr>
+          <tr><td>Attribute</td><td><code class="inline">@[io]</code> <code class="inline">@[mutable]</code> <code class="inline">@[c("sym")]</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 14 -->
+    <section class="chapter" id="ch14">
+      <p class="chapter-num">14</p>
+      <h2>Common mistakes</h2>
+      <ol class="mistake-list">
+        <li><span class="mistake-head"><code class="inline">name :: Type</code> without a body is a function</span> — for a global, use <code class="inline">name : Type = value</code> or <code class="inline">@[mutable] name := value</code>.</li>
+        <li><span class="mistake-head">Assignment to functions</span> — declare a mutable global instead.</li>
+        <li><span class="mistake-head">Unknown attributes</span> — use <code class="inline">mutable</code> / <code class="inline">global</code>, not typos like <code class="inline">globalsss</code>.</li>
+        <li><span class="mistake-head"><code class="inline">true</code> / <code class="inline">false</code></span> — use <code class="inline">True</code> / <code class="inline">False</code>.</li>
+        <li><span class="mistake-head">Shadowing</span> — reassign with <code class="inline">x = ...</code> on a <code class="inline">mutable</code> binding; do not re‑<code class="inline">:=</code>.</li>
+      </ol>
+    </section>
+
+    <footer class="colophon">
+      <p>Generated for Quotelang. See <code class="inline">README.md</code> for the short overview and <code class="inline">.syntax.lua</code> for editor highlighting.</p>
+    </footer>
+
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------- syntax highlighting for .ql code blocks ---------------- */
+
+  var KEYWORDS = [
+    "Module", "import", "module", "relative", "type", "struct", "enum",
+    "mutable", "global", "var", "return", "if", "else", "when", "do",
+    "while", "for", "in", "break", "continue", "jmp", "noop", "macro",
+    "True", "False", "None"
+  ];
+
+  var TYPES = [
+    "Int", "UInt", "Float", "Double", "Bool", "String", "Char", "Unit",
+    "Map", "Buf", "Either", "Option", "UUID"
+  ];
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function highlightQl(src) {
+    var escaped = escapeHtml(src);
+    var tokens = [];
+    var placeholder = function (html) {
+      tokens.push(html);
+      return "\u0000" + (tokens.length - 1) + "\u0001";
+    };
+
+    // comments  -- to end of line
+    escaped = escaped.replace(/--[^\n]*/g, function (m) {
+      return placeholder('<span class="tok-cmt">' + m + "</span>");
+    });
+
+    // strings "..."
+    escaped = escaped.replace(/"(?:[^"\\]|\\.)*"/g, function (m) {
+      return placeholder('<span class="tok-str">' + m + "</span>");
+    });
+
+    // attributes @[...]
+    escaped = escaped.replace(/@\[[^\]]*\]/g, function (m) {
+      return placeholder('<span class="tok-attr">' + m + "</span>");
+    });
+
+    // intrinsics $name
+    escaped = escaped.replace(/\$[A-Za-z_]+/g, function (m) {
+      return placeholder('<span class="tok-intr">' + m + "</span>");
+    });
+
+    // numbers
+    escaped = escaped.replace(/\b\d+(\.\d+)?\b/g, function (m) {
+      return placeholder('<span class="tok-num">' + m + "</span>");
+    });
+
+    // keywords
+    var kwRe = new RegExp("\\b(" + KEYWORDS.join("|") + ")\\b", "g");
+    escaped = escaped.replace(kwRe, function (m) {
+      return placeholder('<span class="tok-kw">' + m + "</span>");
+    });
+
+    // types (capitalised identifiers from the built-in list)
+    var tyRe = new RegExp("\\b(" + TYPES.join("|") + ")\\b", "g");
+    escaped = escaped.replace(tyRe, function (m) {
+      return placeholder('<span class="tok-type">' + m + "</span>");
+    });
+
+    // arrows / double colons
+    escaped = escaped.replace(/(::|->|:=)/g, function (m) {
+      return placeholder('<span class="tok-punct">' + m + "</span>");
+    });
+
+    // restore placeholders
+    escaped = escaped.replace(/\u0000(\d+)\u0001/g, function (_, i) {
+      return tokens[parseInt(i, 10)];
+    });
+
+    return escaped;
+  }
+
+  function highlightBash(src) {
+    var escaped = escapeHtml(src);
+    escaped = escaped.replace(/#[^\n]*/g, function (m) {
+      return '<span class="tok-cmt">' + m + "</span>";
+    });
+    escaped = escaped.replace(/\bqlc\b/g, '<span class="tok-kw">qlc</span>');
+    return escaped;
+  }
+
+  document.querySelectorAll("code.ql").forEach(function (el) {
+    el.innerHTML = highlightQl(el.textContent);
+  });
+  document.querySelectorAll("code.ql-bash").forEach(function (el) {
+    el.innerHTML = highlightBash(el.textContent);
+  });
+  document.querySelectorAll("code.ql-error").forEach(function (el) {
+    var html = escapeHtml(el.textContent)
+      .replace(/^(error\[[^\]]*\][^\n]*)/, '<span class="diag-error">$1</span>')
+      .replace(/(= help:[^\n]*)/g, '<span class="diag-help">$1</span>')
+      .replace(/(= note:[^\n]*)/g, '<span class="diag-note">$1</span>');
+    el.innerHTML = html;
+  });
+
+  /* ---------------- diagnostic panel: typewriter cycle ---------------- */
+
+  var diagnostics = [
+    {
+      lines: [
+        { cls: "diag-error", text: "error[E0110]: unknown attribute @[globalsss]" },
+        { cls: "diag-help", text: "  = help: did you mean @[global]?" }
+      ]
+    },
+    {
+      lines: [
+        { cls: "diag-error", text: 'error[E0522]: cannot assign to "prg" ~~ it is a function, not a variable' },
+        { cls: "diag-help", text: "  = help: declare a mutable global instead: @[mutable] prg : String = \"\"." },
+        { cls: "diag-note", text: "  = note: functions use name :: Args -> Ret; globals use name : Type = value" }
+      ]
+    },
+    {
+      lines: [
+        { cls: "diag-warn", text: "warning[W0903]: this jump chooses a no-op branch" },
+        { cls: "diag-help", text: "  = help: y > 0 ? jmp positive : noop.  ~~ intentional? keep it explicit." }
+      ]
+    }
+  ];
+
+  var diagBody = document.getElementById("diagBody");
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function typeDiagnostic(index) {
+    if (!diagBody) return;
+    var entry = diagnostics[index % diagnostics.length];
+    diagBody.innerHTML = "";
+
+    if (reduceMotion) {
+      entry.lines.forEach(function (line, i) {
+        var span = document.createElement("div");
+        span.className = line.cls;
+        span.textContent = line.text;
+        diagBody.appendChild(span);
+      });
+      setTimeout(function () { typeDiagnostic(index + 1); }, 3200);
+      return;
+    }
+
+    var flatChars = [];
+    entry.lines.forEach(function (line, li) {
+      if (li > 0) flatChars.push({ ch: "\n", cls: null });
+      for (var c = 0; c < line.text.length; c++) {
+        flatChars.push({ ch: line.text[c], cls: line.cls });
+      }
+    });
+
+    var container = document.createElement("span");
+    diagBody.appendChild(container);
+    var cursor = document.createElement("span");
+    cursor.className = "diag-cursor";
+    cursor.textContent = "\u00A0";
+    diagBody.appendChild(cursor);
+
+    var i = 0;
+    var spans = {};
+
+    function step() {
+      if (i >= flatChars.length) {
+        setTimeout(function () { typeDiagnostic(index + 1); }, 2600);
+        return;
+      }
+      var item = flatChars[i];
+      var key = item.cls || "plain";
+      if (item.ch === "\n") {
+        container.appendChild(document.createElement("br"));
+      } else {
+        if (!spans[key] || spans[key].dataset.line !== String(i)) {
+          spans[key] = document.createElement("span");
+          spans[key].className = item.cls || "";
+          container.appendChild(spans[key]);
+        }
+        spans[key].textContent += item.ch;
+      }
+      i++;
+      setTimeout(step, 14);
+    }
+    step();
+  }
+
+  if (diagBody) {
+    typeDiagnostic(0);
+  }
+
+  /* ---------------- mobile nav toggle ---------------- */
+
+  var navToggle = document.getElementById("navToggle");
+  var toc = document.getElementById("toc");
+
+  if (navToggle && toc) {
+    navToggle.addEventListener("click", function () {
+      var open = toc.classList.toggle("open");
+      navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    toc.querySelectorAll("a").forEach(function (a) {
+      a.addEventListener("click", function () {
+        toc.classList.remove("open");
+        navToggle.setAttribute("aria-expanded", "false");
+      });
+    });
+  }
+
+  /* ---------------- scroll-spy for active chapter link ---------------- */
+
+  var links = Array.prototype.slice.call(document.querySelectorAll(".toc-list a"));
+  var sections = links
+    .map(function (a) { return document.querySelector(a.getAttribute("href")); })
+    .filter(Boolean);
+
+  function updateActive() {
+    var y = window.scrollY + 140;
+    var current = sections[0];
+    sections.forEach(function (sec) {
+      if (sec.offsetTop <= y) current = sec;
+    });
+    links.forEach(function (a) {
+      a.classList.toggle("active", current && a.getAttribute("href") === "#" + current.id);
+    });
+  }
+
+  window.addEventListener("scroll", updateActive, { passive: true });
+  updateActive();
+})();
+
+</script>
+</body>
+</html>

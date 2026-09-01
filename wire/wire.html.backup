@@ -573,7 +573,7 @@ function renderCompose(){
       <div class="compose-body">
         <textarea id="composeText" placeholder="What's moving on the wire?" maxlength="400" rows="2"></textarea>
         <div class="compose-footer">
-          <span class="char-count" id="charCount">280</span>
+          <span class="char-count" id="charCount">555</span>
           <button class="primary-btn" id="sendBtn">Send dispatch</button>
         </div>
       </div>
@@ -587,14 +587,14 @@ function renderCompose(){
   textarea.addEventListener('input', () => {
     textarea.style.height = 'auto';
     textarea.style.height = textarea.scrollHeight + 'px';
-    const remaining = 280 - textarea.value.length;
+    const remaining = 555 - textarea.value.length;
     charCount.textContent = remaining;
     charCount.className = 'char-count' + (remaining < 0 ? ' over' : remaining < 30 ? ' warn' : '');
   });
 
   sendBtn.onclick = async () => {
     const content = textarea.value.trim();
-    if (!content || content.length > 280) return;
+    if (!content || content.length > 555) return;
     sendBtn.disabled = true;
     const { error } = await supabase.from('microblog-posts').insert({
       user_id: session.user.id,
@@ -607,7 +607,7 @@ function renderCompose(){
     }
     textarea.value = '';
     textarea.style.height = 'auto';
-    charCount.textContent = '280';
+    charCount.textContent = '555';
     charCount.className = 'char-count';
   };
 }

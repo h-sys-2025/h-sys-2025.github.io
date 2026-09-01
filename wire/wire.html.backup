@@ -7,7 +7,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.sh; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; media-src https:; connect-src 'self' https://vgytjiqlscdmhwpkfrox.supabase.co wss://vgytjiqlscdmhwpkfrox.supabase.co https://esm.sh;">
+
+<!-- HARDENED CSP: Only allow media from specific trusted hosts -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.sh; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://i.imgur.com https://media.giphy.com https://media.tenor.com https://cdn.discordapp.com https://images.unsplash.com; media-src https://i.imgur.com https://media.giphy.com https://media.tenor.com https://cdn.discordapp.com https://player.vimeo.com https://www.youtube.com; connect-src 'self' https://vgytjiqlscdmhwpkfrox.supabase.co wss://vgytjiqlscdmhwpkfrox.supabase.co https://esm.sh;">
+
 <style>
   :root{
     --ink:#14181C;
@@ -302,11 +305,11 @@
     <div class="search-grid">
       <div class="field search-full">
         <label for="searchTopic">Topic / Keyword</label>
-        <input id="searchTopic" type="text" placeholder="Search dispatches..." />
+        <input id="searchTopic" type="text" placeholder="Search dispatches..." autocomplete="off" />
       </div>
       <div class="field">
         <label for="searchUser">User</label>
-        <input id="searchUser" type="text" placeholder="@username" />
+        <input id="searchUser" type="text" placeholder="@username" autocomplete="off" />
       </div>
       <div class="field">
         <label for="searchDate">From Date</label>
@@ -355,7 +358,7 @@ let profile = null;
 let posts = [];
 let likeCounts = {};
 let myLikes = new Set();
-let auraMap = {};        // userId -> auraScore
+let auraMap = {};
 
 const sessionBox = document.getElementById('sessionBox');
 const authPanel = document.getElementById('authPanel');
@@ -364,7 +367,6 @@ const searchPanel = document.getElementById('searchPanel');
 const feedEl = document.getElementById('feed');
 const emptyStateEl = document.getElementById('emptyState');
 
-// Search Elements
 const searchTopic = document.getElementById('searchTopic');
 const searchUser = document.getElementById('searchUser');
 const searchDate = document.getElementById('searchDate');
@@ -375,12 +377,20 @@ let authMode = 'signin';
 let authMsg = null;
 let authBusy = false;
 
-// Active Filters
 let activeFilters = {
   topic: '',
   user: '',
   date: ''
 };
+
+// --- SECURITY: TRUSTED HOSTS ---
+const ALLOWED_IMAGE_HOSTS = [
+  'i.imgur.com', 'media.giphy.com', 'media.tenor.com',
+  'cdn.discordapp.com', 'images.unsplash.com', 'pbs.twimg.com'
+];
+const ALLOWED_VIDEO_HOSTS = [
+  'player.vimeo.com', 'www.youtube.com', 'youtu.be'
+];
 
 function initials(name){
   return (name || '?').slice(0,2).toUpperCase();
@@ -395,47 +405,76 @@ function timeAgo(iso){
   return new Date(iso).toLocaleDateString(undefined, { month:'short', day:'numeric' });
 }
 
+// --- SECURITY: ROBUST ESCAPING ---
 function escapeHtml(str){
   const d = document.createElement('div');
   d.textContent = str;
   return d.innerHTML;
 }
 
-function isImageUrl(url){
-  const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|avif|bmp)(\?.*)?$/i;
-  const imageHosts = ['i.imgur.com', 'i.redd.it', 'cdn.discordapp.com', 'media.giphy.com', 'media.tenor.com'];
+// --- SECURITY: STRICT URL VALIDATION ---
+function isValidSecureUrl(urlString) {
   try {
-    const parsed = new URL(url);
-    const hasImageExt = imageExtensions.test(parsed.pathname);
-    const isImageHost = imageHosts.some(host => parsed.hostname.includes(host));
-    return hasImageExt || isImageHost;
-  } catch {
+    const url = new URL(urlString);
+    // 1. Must be HTTPS
+    if (url.protocol !== 'https:') return false;
+    // 2. Must be in whitelist
+    const hostname = url.hostname.toLowerCase();
+    const isAllowedImage = ALLOWED_IMAGE_HOSTS.some(h => hostname === h || hostname.endsWith('.' + h));
+    const isAllowedVideo = ALLOWED_VIDEO_HOSTS.some(h => hostname === h || hostname.endsWith('.' + h));
+    return isAllowedImage || isAllowedVideo;
+  } catch (e) {
     return false;
   }
 }
 
-function isVideoUrl(url){
-  const videoExtensions = /\.(mp4|webm|ogg|mov|mkv)(\?.*)?$/i;
-  const videoHosts = ['vimeo.com', 'youtube.com', 'youtu.be'];
-  try {
-    const parsed = new URL(url);
-    const hasVideoExt = videoExtensions.test(parsed.pathname);
-    const isVideoHost = videoHosts.some(host => parsed.hostname.includes(host));
-    return hasVideoExt || isVideoHost;
-  } catch {
-    return false;
-  }
+function isImageUrl(url) {
+  if (!isValidSecureUrl(url)) return false;
+  const path = new URL(url).pathname.toLowerCase();
+  return /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(path);
 }
 
+function isVideoUrl(url) {
+  if (!isValidSecureUrl(url)) return false;
+  const path = new URL(url).pathname.toLowerCase();
+  const hostname = new URL(url).hostname.toLowerCase();
+
+  // Direct video files
+  if (/\.(mp4|webm|ogg)$/i.test(path)) return true;
+
+  // Embeddable platforms (simplified for safety, usually require embed codes but we stick to direct links for now)
+  if (hostname.includes('vimeo.com') || hostname.includes('youtube.com')) return true;
+
+  return false;
+}
+
+// --- SECURITY: SAFE PARSER ---
 function parseContentWithMedia(text){
+  // 1. Escape everything first to prevent XSS
   const escaped = escapeHtml(text);
+
+  // 2. Find URLs safely
   const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/g;
+
   return escaped.replace(urlRegex, (match) => {
-    if (isImageUrl(match)){
-      return `<img src="${match}" alt="" loading="lazy" class="post-media" />`;
-    } else if (isVideoUrl(match)){
-      return `<video src="${match}" controls class="post-media" loading="lazy" playsinline></video>`;
+    // Clean up trailing punctuation that might have been caught by regex
+    let cleanUrl = match;
+    if (cleanUrl.endsWith('.') || cleanUrl.endsWith(',') || cleanUrl.endsWith(')')) {
+      cleanUrl = cleanUrl.slice(0, -1);
     }
+
+    if (isImageUrl(cleanUrl)){
+      return `<img src="${cleanUrl}" alt="User image" loading="lazy" class="post-media" referrerpolicy="no-referrer" />`;
+    } else if (isVideoUrl(cleanUrl)){
+      // For YouTube/Vimeo, we would normally need an iframe embed,
+      // but for safety/simplicity we only render direct video files or simple links here.
+      // If it's a direct MP4/WebM:
+      if (cleanUrl.match(/\.(mp4|webm|ogg)$/i)) {
+         return `<video src="${cleanUrl}" controls class="post-media" loading="lazy" playsinline></video>`;
+      }
+      // Otherwise just leave as text link to be safe
+    }
+    // Return original escaped text if not a safe media file
     return match;
   });
 }
@@ -528,7 +567,7 @@ function renderCompose(){
       <div class="compose-body">
         <textarea id="composeText" placeholder="What's moving on the wire?" maxlength="400" rows="2"></textarea>
         <div class="compose-footer">
-          <span class="char-count" id="charCount">555</span>
+          <span class="char-count" id="charCount">280</span>
           <button class="primary-btn" id="sendBtn">Send dispatch</button>
         </div>
       </div>
@@ -542,14 +581,14 @@ function renderCompose(){
   textarea.addEventListener('input', () => {
     textarea.style.height = 'auto';
     textarea.style.height = textarea.scrollHeight + 'px';
-    const remaining = 555 - textarea.value.length;
+    const remaining = 280 - textarea.value.length;
     charCount.textContent = remaining;
     charCount.className = 'char-count' + (remaining < 0 ? ' over' : remaining < 30 ? ' warn' : '');
   });
 
   sendBtn.onclick = async () => {
     const content = textarea.value.trim();
-    if (!content || content.length > 555) return;
+    if (!content || content.length > 280) return;
     sendBtn.disabled = true;
     const { error } = await supabase.from('microblog-posts').insert({
       user_id: session.user.id,
@@ -562,7 +601,7 @@ function renderCompose(){
     }
     textarea.value = '';
     textarea.style.height = 'auto';
-    charCount.textContent = '555';
+    charCount.textContent = '280';
     charCount.className = 'char-count';
   };
 }
@@ -571,7 +610,7 @@ function renderCompose(){
 function renderFeed(){
   // Apply filters
   let displayPosts = posts.filter(p => {
-    // Topic Filter
+    // Topic Filter (Safe String Includes)
     if (activeFilters.topic) {
       const lowerContent = p.content.toLowerCase();
       const lowerTopic = activeFilters.topic.toLowerCase();
@@ -675,7 +714,6 @@ async function loadProfile(userId){
 }
 
 async function loadAura() {
-  // Fetch aura scores for all users who have posted
   const { data, error } = await supabase.from('user_aura_view').select('user_id, aura_score');
   if (!error && data) {
     data.forEach(row => {
@@ -701,7 +739,7 @@ async function loadPosts(){
 
   posts = postRows.map(p => ({ ...p, username: profilesById[p.user_id] || 'dispatcher' }));
   await loadLikes();
-  await loadAura(); // Load aura after posts to know which users exist
+  await loadAura();
 }
 
 async function loadLikes(){
@@ -726,6 +764,7 @@ function setupSearch() {
   }
 
   applySearchBtn.onclick = () => {
+    // Sanitize inputs by trimming
     activeFilters.topic = searchTopic.value.trim();
     activeFilters.user = searchUser.value.trim();
     activeFilters.date = searchDate.value;
@@ -749,7 +788,6 @@ function subscribeRealtime(){
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'microblog-posts' }, async (payload) => {
       const { data: prof } = await supabase.from('microblog-profiles').select('username').eq('id', payload.new.user_id).maybeSingle();
       posts.unshift({ ...payload.new, username: prof?.username || 'dispatcher' });
-      // Refresh aura if needed, though for simplicity we might just leave it until reload
       renderFeed();
     })
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'microblog-posts' }, (payload) => {
@@ -758,7 +796,7 @@ function subscribeRealtime(){
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'microblog-likes' }, async () => {
       await loadLikes();
-      await loadAura(); // Aura changes when likes change
+      await loadAura();
       renderFeed();
     })
     .subscribe();

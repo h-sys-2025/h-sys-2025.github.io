@@ -441,7 +441,6 @@ const ALLOWED_IMAGE_HOSTS = ['i.imgur.com','media.giphy.com','media.tenor.com','
 const ALLOWED_VIDEO_HOSTS = ['player.vimeo.com','www.youtube.com','youtu.be'];
 
 // ---------------- content moderation ----------------
-// Starter word list — extend freely. Matches on word-stem boundaries, case-insensitive.
 const BLOCKED_TERMS = [
   'fuck','shit','bitch','asshole','bastard','dick','cunt','slut','whore','nigger','faggot',
   'gore','gory','mutilat','dismember','behead','disembowel','massacre','torture'
@@ -1024,7 +1023,12 @@ async function loadAura(){
 // ---------------- realtime ----------------
 let channel = null;
 function subscribeRealtime(){
-  if (channel) supabase.removeChannel(channel);
+  // FIX: Ensure we unsubscribe from the previous channel before creating a new one
+  if (channel) {
+    supabase.removeChannel(channel);
+    channel = null;
+  }
+
   channel = supabase.channel('wire-feed')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'microblog-posts' }, async (payload) => {
       await ensureProfiles([payload.new.user_id]);
@@ -1044,7 +1048,10 @@ function subscribeRealtime(){
     })
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'microblog-comments' }, async (payload) => {
       const c = payload.new;
-      commentCounts[c.post_id] = (commentCounts[c.post_id]||0) + 1;
+      // FIX: Safety check to prevent double counting if multiple listeners fire
+      if (commentCounts[c.post_id] === undefined) commentCounts[c.post_id] = 0;
+      commentCounts[c.post_id]++;
+
       if (commentsByPost[c.post_id]){
         await ensureProfiles([c.user_id]);
         commentsByPost[c.post_id].push({ ...c, username: profileCache[c.user_id]?.username || 'dispatcher' });

@@ -7,14 +7,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-<!-- HARDENED CSP: Only allow media from specific trusted hosts -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.sh; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://i.imgur.com https://media.giphy.com https://media.tenor.com https://cdn.discordapp.com https://images.unsplash.com; media-src https://i.imgur.com https://media.giphy.com https://media.tenor.com https://cdn.discordapp.com https://player.vimeo.com https://www.youtube.com; connect-src 'self' https://vgytjiqlscdmhwpkfrox.supabase.co wss://vgytjiqlscdmhwpkfrox.supabase.co https://esm.sh;">
-
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.sh; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://i.imgur.com https://media.giphy.com https://media.tenor.com https://cdn.discordapp.com https://images.unsplash.com https://pbs.twimg.com; media-src https://i.imgur.com https://media.giphy.com https://media.tenor.com https://cdn.discordapp.com; connect-src 'self' https://vgytjiqlscdmhwpkfrox.supabase.co wss://vgytjiqlscdmhwpkfrox.supabase.co https://esm.sh;">
 <style>
   :root{
     --ink:#14181C;
     --ink-2:#1B2126;
+    --ink-3:#20272D;
     --paper:#EDEAE3;
     --paper-dim:#A9AEA6;
     --hairline: rgba(237,234,227,0.12);
@@ -55,7 +53,9 @@
     background:rgba(20,24,28,0.92);
     backdrop-filter:blur(6px);
     border-bottom:1px solid var(--hairline);
-    padding:18px 24px;
+  }
+  .header-top{
+    padding:18px 24px 14px;
     display:flex;
     align-items:baseline;
     justify-content:space-between;
@@ -74,13 +74,30 @@
     font-style:italic;
     font-family:'Fraunces',serif;
   }
-  .session-box{font-size:13px; color:var(--paper-dim); display:flex; align-items:center; gap:10px;}
-  .session-box strong{color:var(--paper); font-weight:600;}
+  .session-box{font-size:13px; color:var(--paper-dim); display:flex; align-items:center; gap:12px;}
   .btn-link{
     background:none;border:none;color:var(--signal);
     font-size:13px;font-weight:600;padding:0;
   }
   .btn-link:hover{text-decoration:underline;}
+
+  .nav-tabs{
+    display:flex;
+    padding:0 24px;
+    gap:4px;
+  }
+  .nav-tab{
+    background:none;
+    border:none;
+    color:var(--paper-dim);
+    font-size:13px;
+    font-weight:600;
+    padding:10px 14px;
+    border-bottom:2px solid transparent;
+    letter-spacing:0.01em;
+  }
+  .nav-tab.active{color:var(--signal); border-bottom-color:var(--signal);}
+  .nav-tab:hover{color:var(--paper);}
 
   /* ---------- auth panel ---------- */
   .auth-panel{
@@ -102,9 +119,9 @@
     margin:0 0 10px 0;
     max-width:46ch;
   }
-  .field{display:flex; flex-direction:column; gap:6px;}
+  .field{display:flex; flex-direction:column; gap:6px; margin-bottom:14px;}
   .field label{font-size:12px; color:var(--paper-dim);}
-  .field input, .field select{
+  .field input, .field textarea{
     background:var(--ink-2);
     border:1px solid var(--hairline-strong);
     color:var(--paper);
@@ -112,9 +129,11 @@
     border-radius:var(--radius);
     font-size:14px;
     font-family:inherit;
-    width: 100%;
+    width:100%;
+    resize:vertical;
   }
-  .field input:focus, .field select:focus{outline:2px solid var(--signal); outline-offset:0; border-color:var(--signal);}
+  .field input:disabled{opacity:0.5;}
+  .field input:focus, .field textarea:focus{outline:2px solid var(--signal); outline-offset:0; border-color:var(--signal);}
   .auth-form{display:flex; flex-direction:column; gap:14px; max-width:360px;}
   .primary-btn{
     background:var(--signal);
@@ -128,8 +147,18 @@
   }
   .primary-btn:hover{filter:brightness(1.08);}
   .primary-btn:disabled{opacity:0.5; cursor:default;}
+  .secondary-btn{
+    background:transparent;
+    border:1px solid var(--hairline-strong);
+    color:var(--paper-dim);
+    padding:9px 16px;
+    border-radius:var(--radius);
+    font-size:13px;
+    font-weight:600;
+  }
+  .secondary-btn:hover{border-color:var(--paper); color:var(--paper);}
   .auth-toggle{font-size:13px; color:var(--paper-dim);}
-  .auth-msg{font-size:13px; padding:10px 12px; border-radius:var(--radius); border:1px solid var(--hairline-strong);}
+  .auth-msg{font-size:13px; padding:10px 12px; border-radius:var(--radius); border:1px solid var(--hairline-strong); margin-bottom:8px;}
   .auth-msg.error{color:var(--danger); border-color:var(--danger);}
   .auth-msg.ok{color:var(--wire-green); border-color:var(--wire-green);}
 
@@ -152,7 +181,9 @@
     color:var(--signal);
     flex-shrink:0;
   }
-  .compose-body{flex:1; display:flex; flex-direction:column; gap:10px;}
+  .avatar-sm{width:28px; height:28px; font-size:11px;}
+  .avatar-lg{width:56px; height:56px; font-size:20px;}
+  .compose-body{flex:1; display:flex; flex-direction:column; gap:10px; min-width:0;}
   .compose textarea{
     width:100%;
     background:transparent;
@@ -170,41 +201,9 @@
   .char-count{font-size:12px; color:var(--paper-dim); font-variant-numeric:tabular-nums;}
   .char-count.warn{color:var(--signal);}
   .char-count.over{color:var(--danger);}
+  #composeMsg .auth-msg{margin-bottom:0;}
 
-  /* ---------- search ---------- */
-  .search-panel {
-    padding: 16px 24px;
-    border-bottom: 1px solid var(--hairline);
-    background: rgba(27, 33, 38, 0.5);
-  }
-  .search-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-  .search-full {
-    grid-column: span 2;
-  }
-  .search-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-  }
-  .secondary-btn {
-    background: transparent;
-    border: 1px solid var(--hairline-strong);
-    color: var(--paper-dim);
-    padding: 8px 14px;
-    border-radius: var(--radius);
-    font-size: 13px;
-  }
-  .secondary-btn:hover {
-    border-color: var(--paper);
-    color: var(--paper);
-  }
-
-  /* ---------- feed ---------- */
+  /* ---------- feed / posts ---------- */
   .feed{flex:1;}
   .empty-state{
     padding:60px 24px;
@@ -223,15 +222,16 @@
   @keyframes fadeIn{ from{opacity:0; transform:translateY(-4px);} to{opacity:1; transform:translateY(0);} }
   .post-body{flex:1; min-width:0;}
   .post-head{display:flex; align-items:baseline; gap:8px; margin-bottom:4px; flex-wrap:wrap;}
-  .post-user{font-weight:600; font-size:14px; display: flex; align-items: center; gap: 6px;}
-  .aura-badge {
-    font-size: 11px;
-    color: var(--signal);
-    background: var(--signal-dim);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
+  .post-user{font-weight:600; font-size:14px; display:flex; align-items:center; gap:6px;}
+  .aura-badge{
+    font-size:11px;
+    color:var(--signal);
+    background:var(--signal-dim);
+    padding:2px 6px;
+    border-radius:4px;
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    white-space:nowrap;
   }
   .post-time{font-size:12px; color:var(--paper-dim);}
   .post-content{
@@ -250,24 +250,98 @@
     display:block;
     border:1px solid var(--hairline-strong);
   }
-  .post-content video{
-    background:#000;
-  }
+  .post-content video{background:#000;}
   .post-actions{display:flex; align-items:center; gap:18px;}
-  .like-btn{
+  .like-btn, .comment-btn{
     background:none;border:none;color:var(--paper-dim);
     display:flex;align-items:center;gap:6px;
     font-size:13px; padding:2px 0;
   }
-  .like-btn svg{width:15px;height:15px; stroke:currentColor; fill:none;}
+  .like-btn svg, .comment-btn svg{width:15px;height:15px; stroke:currentColor; fill:none;}
   .like-btn.liked{color:var(--signal);}
   .like-btn.liked svg{fill:var(--signal); stroke:var(--signal);}
-  .like-btn:hover{color:var(--signal);}
+  .like-btn:hover, .comment-btn:hover{color:var(--signal);}
   .delete-btn{
     background:none;border:none;color:var(--paper-dim);
     font-size:12px; padding:2px 0;
   }
   .delete-btn:hover{color:var(--danger);}
+
+  /* ---------- comments ---------- */
+  .comments-section{margin-top:4px;}
+  .comments-section:empty{margin-top:0;}
+  .comments-loading, .comments-empty{font-size:12.5px; color:var(--paper-dim); padding:10px 0 4px;}
+  .comment-row{
+    display:flex; gap:10px; align-items:flex-start;
+    padding:10px 0 10px 12px;
+    border-left:2px solid var(--hairline-strong);
+    margin-top:8px;
+  }
+  .comment-body{flex:1; min-width:0;}
+  .comment-head{display:flex; gap:8px; align-items:baseline; flex-wrap:wrap;}
+  .comment-user{font-size:12.5px; font-weight:600;}
+  .comment-time{font-size:11px; color:var(--paper-dim);}
+  .comment-text{font-size:13.5px; line-height:1.4; margin:2px 0 0; white-space:pre-wrap; word-wrap:break-word;}
+  .comment-delete{background:none; border:none; color:var(--paper-dim); font-size:11px; padding:0;}
+  .comment-delete:hover{color:var(--danger);}
+  .comment-reply{display:flex; gap:8px; align-items:flex-end; margin-top:10px; padding-left:12px;}
+  .comment-input{
+    flex:1; background:var(--ink-2); border:1px solid var(--hairline-strong); color:var(--paper);
+    padding:8px 10px; border-radius:var(--radius); font-family:'Inter',sans-serif; font-size:13px; resize:none; min-height:34px;
+  }
+  .comment-input:focus{outline:2px solid var(--signal); border-color:var(--signal);}
+
+  /* ---------- search ---------- */
+  .search-view{padding-top:4px;}
+  .search-box{padding:16px 24px; border-bottom:1px solid var(--hairline);}
+  .search-box input{
+    width:100%; background:var(--ink-2); border:1px solid var(--hairline-strong); color:var(--paper);
+    padding:12px 14px; border-radius:var(--radius); font-size:15px; font-family:inherit;
+  }
+  .search-box input:focus{outline:2px solid var(--signal); border-color:var(--signal);}
+  .search-status{padding:14px 24px; color:var(--paper-dim); font-size:13px;}
+  .section-heading{padding:16px 24px 6px;}
+  .section-heading h2{font-family:'Fraunces',serif; font-size:15px; font-weight:600; margin:0; text-transform:uppercase; letter-spacing:0.06em; color:var(--paper-dim);}
+  .section-heading p{margin:2px 0 0; font-size:12.5px; color:var(--paper-dim);}
+  .people-grid{padding:0 24px 8px; display:flex; flex-direction:column; gap:2px;}
+  .person-card{display:flex; gap:12px; align-items:center; padding:10px 0; border-bottom:1px solid var(--hairline);}
+  .person-info{display:flex; flex-direction:column; min-width:0;}
+  .person-user{font-weight:600; font-size:14px;}
+  .person-bio{font-size:12.5px; color:var(--paper-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
+  /* ---------- leaderboard ---------- */
+  .leaderboard{padding-bottom:8px;}
+  .lb-row{
+    display:flex; align-items:center; gap:14px;
+    padding:14px 24px;
+    border-bottom:1px solid var(--hairline);
+  }
+  .lb-row-me{background:var(--signal-dim);}
+  .lb-rank{
+    font-family:'Fraunces',serif; font-weight:600; font-size:16px; color:var(--paper-dim);
+    width:24px; text-align:right; flex-shrink:0;
+  }
+  .lb-info{flex:1; display:flex; flex-direction:column; min-width:0;}
+  .lb-user{font-weight:600; font-size:14px;}
+  .lb-meta{font-size:12px; color:var(--paper-dim);}
+  .lb-score{font-size:13px; padding:4px 9px;}
+
+  /* ---------- account modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(10,12,14,0.72);
+    display:flex; align-items:flex-start; justify-content:center;
+    padding:60px 20px; z-index:100; overflow-y:auto;
+  }
+  .modal-card{
+    background:var(--ink-3); border:1px solid var(--hairline-strong); border-radius:6px;
+    padding:26px; max-width:400px; width:100%;
+    animation:fadeIn 0.2s ease;
+  }
+  .modal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;}
+  .modal-head h2{font-family:'Fraunces',serif; font-size:19px; margin:0; font-weight:600;}
+  .modal-avatar-row{display:flex; align-items:center; gap:14px; margin-bottom:20px;}
+  .modal-stats{display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--paper-dim);}
+  .modal-actions{display:flex; gap:10px; margin-top:6px;}
 
   footer{
     padding:22px 24px 40px;
@@ -279,10 +353,10 @@
   ::selection{background:var(--signal-dim);}
 
   @media (max-width:480px){
-    header{padding:14px 16px;}
-    .compose, .post, .auth-panel, .search-panel{padding-left:16px; padding-right:16px;}
-    .search-grid { grid-template-columns: 1fr; }
-    .search-full { grid-column: span 1; }
+    .header-top{padding:14px 16px 10px;}
+    .nav-tabs{padding:0 12px;}
+    .compose, .post, .auth-panel, .search-box, .section-heading, .people-grid, .lb-row{padding-left:16px; padding-right:16px;}
+    .modal-card{padding:20px;}
   }
 </style>
 </head>
@@ -290,111 +364,110 @@
 
 <div class="app">
   <header>
-    <div class="brand">
-      <span class="brand-mark">Wire</span>
-      <span class="brand-tag">a dispatch board</span>
+    <div class="header-top">
+      <div class="brand">
+        <span class="brand-mark">Wire</span>
+        <span class="brand-tag">a dispatch board</span>
+      </div>
+      <div class="session-box" id="sessionBox"></div>
     </div>
-    <div class="session-box" id="sessionBox"></div>
+    <nav class="nav-tabs" id="navTabs"></nav>
   </header>
 
   <div id="authPanel"></div>
   <div id="composePanel"></div>
-
-  <!-- Search Section -->
-  <div class="search-panel" id="searchPanel" style="display:none;">
-    <div class="search-grid">
-      <div class="field search-full">
-        <label for="searchTopic">Topic / Keyword</label>
-        <input id="searchTopic" type="text" placeholder="Search dispatches..." autocomplete="off" />
-      </div>
-      <div class="field">
-        <label for="searchUser">User</label>
-        <input id="searchUser" type="text" placeholder="@username" autocomplete="off" />
-      </div>
-      <div class="field">
-        <label for="searchDate">From Date</label>
-        <input id="searchDate" type="date" />
-      </div>
-    </div>
-    <div class="search-actions">
-      <button class="secondary-btn" id="clearSearchBtn">Clear</button>
-      <button class="primary-btn" id="applySearchBtn" style="padding: 8px 14px; font-size: 13px;">Filter Wire</button>
-    </div>
-  </div>
-
-  <div class="feed" id="feed"></div>
-  <div id="emptyState"></div>
+  <div id="mainView"></div>
 
   <footer>Dispatches are public and permanent until withdrawn by their author.</footer>
 </div>
 
+<div id="accountModalRoot"></div>
+
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import confetti from 'https://esm.sh/canvas-confetti@1';
 
 const SUPABASE_URL = 'https://vgytjiqlscdmhwpkfrox.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZneXRqaXFsc2NkbWh3cGtmcm94Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyNzIwMjAsImV4cCI6MjEwMzg0ODAyMH0.RFsU37jwVyDTTqNHEQAvcjrvnQQG_67uGaDInENT1Z0';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    flowType: 'pkce',
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  }
+  auth: { flowType: 'pkce', autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
 });
 
 const REDIRECT_URL = window.location.origin + window.location.pathname;
-
 if (window.location.hash.includes('access_token') || window.location.search.includes('code=')) {
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      history.replaceState(null, '', window.location.pathname);
-    }, 300);
-  });
+  window.addEventListener('load', () => setTimeout(() => history.replaceState(null, '', window.location.pathname), 300));
 }
 
+const MAX_POST_LEN = 500;
+const MAX_COMMENT_LEN = 280;
+
+// ---------------- state ----------------
 let session = null;
 let profile = null;
 let posts = [];
 let likeCounts = {};
+let commentCounts = {};
 let myLikes = new Set();
 let auraMap = {};
+let leaderboard = [];
+let profileCache = {};      // id -> {id, username, bio}
+let commentsByPost = {};    // postId -> [comments]
+let expandedPosts = new Set();
 
-const sessionBox = document.getElementById('sessionBox');
-const authPanel = document.getElementById('authPanel');
-const composePanel = document.getElementById('composePanel');
-const searchPanel = document.getElementById('searchPanel');
-const feedEl = document.getElementById('feed');
-const emptyStateEl = document.getElementById('emptyState');
-
-const searchTopic = document.getElementById('searchTopic');
-const searchUser = document.getElementById('searchUser');
-const searchDate = document.getElementById('searchDate');
-const applySearchBtn = document.getElementById('applySearchBtn');
-const clearSearchBtn = document.getElementById('clearSearchBtn');
-
+let currentView = 'feed';   // feed | search | leaderboard
 let authMode = 'signin';
 let authMsg = null;
 let authBusy = false;
+let composeDraft = '';
 
-let activeFilters = {
-  topic: '',
-  user: '',
-  date: ''
-};
+let searchQuery = '';
+let searchResults = { posts: [], profiles: [] };
+let searchBusy = false;
+let searchDebounceTimer = null;
 
-// --- SECURITY: TRUSTED HOSTS ---
-const ALLOWED_IMAGE_HOSTS = [
-  'i.imgur.com', 'media.giphy.com', 'media.tenor.com',
-  'cdn.discordapp.com', 'images.unsplash.com', 'pbs.twimg.com'
+let accountModalOpen = false;
+let accountStats = null;
+
+// ---------------- dom refs ----------------
+const sessionBox = document.getElementById('sessionBox');
+const navTabs = document.getElementById('navTabs');
+const authPanel = document.getElementById('authPanel');
+const composePanel = document.getElementById('composePanel');
+const mainView = document.getElementById('mainView');
+const accountModalRoot = document.getElementById('accountModalRoot');
+
+const ALLOWED_IMAGE_HOSTS = ['i.imgur.com','media.giphy.com','media.tenor.com','cdn.discordapp.com','images.unsplash.com','pbs.twimg.com'];
+const ALLOWED_VIDEO_HOSTS = ['player.vimeo.com','www.youtube.com','youtu.be'];
+
+// ---------------- content moderation ----------------
+// Starter word list — extend freely. Matches on word-stem boundaries, case-insensitive.
+const BLOCKED_TERMS = [
+  'fuck','shit','bitch','asshole','bastard','dick','cunt','slut','whore','nigger','faggot',
+  'gore','gory','mutilat','dismember','behead','disembowel','massacre','torture'
 ];
-const ALLOWED_VIDEO_HOSTS = [
-  'player.vimeo.com', 'www.youtube.com', 'youtu.be'
-];
-
-function initials(name){
-  return (name || '?').slice(0,2).toUpperCase();
+function moderateText(text){
+  const lower = text.toLowerCase();
+  for (const term of BLOCKED_TERMS){
+    if (new RegExp('\\b' + term).test(lower)){
+      return { ok: false, reason: "That dispatch contains language that isn't welcome on the wire." };
+    }
+  }
+  return { ok: true };
 }
+
+function celebrate(size = 'big'){
+  confetti({
+    particleCount: size === 'big' ? 90 : 40,
+    spread: size === 'big' ? 75 : 55,
+    startVelocity: size === 'big' ? 45 : 30,
+    origin: { y: 0.25 },
+    colors: ['#E8A33D', '#6FA88A', '#EDEAA3', '#EDEAE3']
+  });
+}
+
+// ---------------- helpers ----------------
+function initials(name){ return (name || '?').slice(0,2).toUpperCase(); }
 
 function timeAgo(iso){
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
@@ -405,152 +478,172 @@ function timeAgo(iso){
   return new Date(iso).toLocaleDateString(undefined, { month:'short', day:'numeric' });
 }
 
-// --- SECURITY: ROBUST ESCAPING ---
 function escapeHtml(str){
   const d = document.createElement('div');
   d.textContent = str;
   return d.innerHTML;
 }
 
-// --- SECURITY: STRICT URL VALIDATION ---
-function isValidSecureUrl(urlString) {
-  try {
+function isValidSecureUrl(urlString){
+  try{
     const url = new URL(urlString);
-    // 1. Must be HTTPS
     if (url.protocol !== 'https:') return false;
-    // 2. Must be in whitelist
     const hostname = url.hostname.toLowerCase();
-    const isAllowedImage = ALLOWED_IMAGE_HOSTS.some(h => hostname === h || hostname.endsWith('.' + h));
-    const isAllowedVideo = ALLOWED_VIDEO_HOSTS.some(h => hostname === h || hostname.endsWith('.' + h));
-    return isAllowedImage || isAllowedVideo;
-  } catch (e) {
-    return false;
-  }
+    const isImg = ALLOWED_IMAGE_HOSTS.some(h => hostname === h || hostname.endsWith('.' + h));
+    const isVid = ALLOWED_VIDEO_HOSTS.some(h => hostname === h || hostname.endsWith('.' + h));
+    return isImg || isVid;
+  }catch(e){ return false; }
 }
-
-// --- UPDATED: SAFE PARSER ---
+function isImageUrl(url){
+  if (!isValidSecureUrl(url)) return false;
+  return /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(new URL(url).pathname.toLowerCase());
+}
+function isVideoUrl(url){
+  if (!isValidSecureUrl(url)) return false;
+  return /\.(mp4|webm|ogg)$/i.test(new URL(url).pathname.toLowerCase());
+}
 function parseContentWithMedia(text){
-  // 1. Escape everything first to prevent XSS
   const escaped = escapeHtml(text);
-
-  // 2. Find URLs safely
-  // Note: We look for http/https URLs that don't contain spaces or common break characters
   const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/g;
-
   return escaped.replace(urlRegex, (match) => {
-    // Clean up trailing punctuation that might have been caught by regex
     let cleanUrl = match;
-    if (cleanUrl.endsWith('.') || cleanUrl.endsWith(',') || cleanUrl.endsWith(')')) {
-      cleanUrl = cleanUrl.slice(0, -1);
-    }
-
-    // Case 1: Direct Image File -> Render Image
-    if (isImageUrl(cleanUrl)){
-      return `<img src="${cleanUrl}" alt="User image" loading="lazy" class="post-media" referrerpolicy="no-referrer" />`;
-    }
-
-    // Case 2: Direct Video File -> Render Video
-    else if (isVideoUrl(cleanUrl)){
-       if (cleanUrl.match(/\.(mp4|webm|ogg)$/i)) {
-         return `<video src="${cleanUrl}" controls class="post-media" loading="lazy" playsinline></video>`;
-      }
-    }
-
-    // Case 3: Valid Safe Link -> Render Clickable Anchor
-    // We check isValidSecureUrl again to ensure we only link to trusted hosts
-    if (isValidSecureUrl(cleanUrl)) {
-      return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--signal); text-decoration:underline;">${cleanUrl}</a>`;
-    }
-
-    // Case 4: Unsafe or Unknown URL -> Return original escaped text (plain text)
+    if (cleanUrl.endsWith('.') || cleanUrl.endsWith(',') || cleanUrl.endsWith(')')) cleanUrl = cleanUrl.slice(0, -1);
+    if (isImageUrl(cleanUrl)) return `<img src="${cleanUrl}" alt="attached image" loading="lazy" referrerpolicy="no-referrer" />`;
+    if (isVideoUrl(cleanUrl)) return `<video src="${cleanUrl}" controls loading="lazy" playsinline></video>`;
+    if (isValidSecureUrl(cleanUrl)) return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--signal); text-decoration:underline;">${cleanUrl}</a>`;
     return match;
   });
 }
 
-// --- UPDATED: Helper Functions ---
-
-function isImageUrl(url) {
-  if (!isValidSecureUrl(url)) return false;
-  const path = new URL(url).pathname.toLowerCase();
-  // Strict check for image extensions
-  return /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(path);
+async function ensureProfiles(ids){
+  const missing = ids.filter(id => !profileCache[id]);
+  if (!missing.length) return;
+  const { data } = await supabase.from('microblog-profiles').select('id,username,bio').in('id', missing);
+  (data||[]).forEach(p => profileCache[p.id] = p);
 }
 
-function isVideoUrl(url) {
-  if (!isValidSecureUrl(url)) return false;
-  const path = new URL(url).pathname.toLowerCase();
+// ---------------- shared post card ----------------
+function postCardHtml(p){
+  const liked = myLikes.has(p.id);
+  const likeN = likeCounts[p.id] || 0;
+  const commentN = commentCounts[p.id] || 0;
+  const mine = session && p.user_id === session.user.id;
+  const aura = auraMap[p.user_id] !== undefined ? auraMap[p.user_id] : 0;
+  const expanded = expandedPosts.has(p.id);
 
-  // Direct video files
-  if (/\.(mp4|webm|ogg)$/i.test(path)) return true;
-
-  return false;
+  return `
+    <article class="post" data-id="${p.id}">
+      <div class="avatar">${initials(p.username)}</div>
+      <div class="post-body">
+        <div class="post-head">
+          <span class="post-user">@${escapeHtml(p.username)} <span class="aura-badge" title="Aura: likes + replies per dispatch">⚡ ${aura}</span></span>
+          <span class="post-time">${timeAgo(p.created_at)}</span>
+        </div>
+        <div class="post-content">${parseContentWithMedia(p.content)}</div>
+        <div class="post-actions">
+          <button class="like-btn ${liked ? 'liked' : ''}" data-like="${p.id}" ${session ? '' : 'disabled'}>
+            <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.2 2 4.5 5.6 4c2-.3 3.7.7 6.4 3 2.7-2.3 4.4-3.3 6.4-3 3.6.5 5.2 4.2 3.6 7.7C19.5 16.4 12 21 12 21z"/></svg>
+            <span>${likeN > 0 ? likeN : ''}</span>
+          </button>
+          <button class="comment-btn" data-comment-toggle="${p.id}">
+            <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            <span>${commentN > 0 ? commentN : ''}</span>
+          </button>
+          ${mine ? `<button class="delete-btn" data-delete="${p.id}">withdraw</button>` : ''}
+        </div>
+        <div class="comments-section" id="comments-${p.id}">${expanded ? commentsThreadHtml(p.id) : ''}</div>
+      </div>
+    </article>
+  `;
 }
-// ---------------- render: session box ----------------
+
+function commentsThreadHtml(postId){
+  const list = commentsByPost[postId];
+  if (!list) return `<div class="comments-loading">loading replies…</div>`;
+  const items = list.map(c => `
+    <div class="comment-row">
+      <div class="avatar avatar-sm">${initials(c.username)}</div>
+      <div class="comment-body">
+        <div class="comment-head">
+          <span class="comment-user">@${escapeHtml(c.username)}</span>
+          <span class="comment-time">${timeAgo(c.created_at)}</span>
+        </div>
+        <p class="comment-text">${escapeHtml(c.content)}</p>
+      </div>
+      ${session && c.user_id === session.user.id ? `<button class="comment-delete" data-comment-delete="${c.id}">remove</button>` : ''}
+    </div>
+  `).join('') || `<div class="comments-empty">No replies yet — be the first.</div>`;
+
+  const replyBox = session
+    ? `<div class="comment-reply">
+         <textarea class="comment-input" data-comment-input="${postId}" maxlength="${MAX_COMMENT_LEN}" placeholder="Reply on the wire…" rows="1"></textarea>
+         <button class="secondary-btn" data-comment-send="${postId}">Reply</button>
+       </div>`
+    : `<div class="comments-empty">Sign in to reply.</div>`;
+
+  return items + replyBox;
+}
+
+// ---------------- session / nav ----------------
 function renderSessionBox(){
   if (session && profile){
-    sessionBox.innerHTML = `<span>signed on as <strong>@${escapeHtml(profile.username)}</strong></span><button class="btn-link" id="signOutBtn">sign off</button>`;
-    document.getElementById('signOutBtn').onclick = async () => {
-      await supabase.auth.signOut();
-    };
+    sessionBox.innerHTML = `<button class="btn-link" id="openAccountBtn">@${escapeHtml(profile.username)}</button><button class="btn-link" id="signOutBtn">sign off</button>`;
+    document.getElementById('openAccountBtn').onclick = openAccountModal;
+    document.getElementById('signOutBtn').onclick = async () => { await supabase.auth.signOut(); };
   } else {
     sessionBox.innerHTML = '';
   }
 }
 
-// ---------------- render: auth panel ----------------
+function renderNav(){
+  const tabs = [['feed','Feed'], ['search','Search'], ['leaderboard','Leaderboard']];
+  navTabs.innerHTML = tabs.map(([key,label]) =>
+    `<button class="nav-tab ${currentView === key ? 'active' : ''}" data-tab="${key}">${label}</button>`
+  ).join('');
+  navTabs.querySelectorAll('[data-tab]').forEach(btn => {
+    btn.onclick = () => switchView(btn.getAttribute('data-tab'));
+  });
+}
+
+function switchView(view){
+  currentView = view;
+  renderNav();
+  updateComposeVisibility();
+  if (view === 'leaderboard') loadAura().then(renderMain);
+  else renderMain();
+}
+
+function updateComposeVisibility(){
+  composePanel.style.display = (currentView === 'feed' && session && profile) ? 'flex' : 'none';
+}
+
+// ---------------- auth panel ----------------
 function renderAuthPanel(){
   if (session){ authPanel.innerHTML = ''; return; }
-
   authPanel.innerHTML = `
     <div class="auth-panel">
       <h1>${authMode === 'signin' ? 'Welcome back to the wire.' : 'Open a line on the wire.'}</h1>
       <p class="lede">${authMode === 'signin'
         ? 'Sign in to read the board and send your own dispatches.'
-        : 'Create an account to start sending dispatches. Pick any email — you\'ll be assigned a handle automatically.'}</p>
+        : "Create an account to start sending dispatches. Pick any email — you'll be assigned a handle automatically."}</p>
       ${authMsg ? `<div class="auth-msg ${authMsg.type}">${escapeHtml(authMsg.text)}</div>` : ''}
       <form class="auth-form" id="authForm">
-        <div class="field">
-          <label for="authEmail">email</label>
-          <input id="authEmail" type="email" required autocomplete="email" />
-        </div>
-        <div class="field">
-          <label for="authPassword">password</label>
-          <input id="authPassword" type="password" required minlength="6" autocomplete="${authMode === 'signin' ? 'current-password' : 'new-password'}" />
-        </div>
-        <button class="primary-btn" type="submit" ${authBusy ? 'disabled' : ''}>
-          ${authBusy ? 'working…' : (authMode === 'signin' ? 'Sign in' : 'Sign up')}
-        </button>
-        <div class="auth-toggle">
-          ${authMode === 'signin' ? "New to the wire?" : "Already have a line?"}
-          <button type="button" class="btn-link" id="authToggleBtn">${authMode === 'signin' ? 'Sign up' : 'Sign in'}</button>
-        </div>
+        <div class="field"><label for="authEmail">email</label><input id="authEmail" type="email" required autocomplete="email" /></div>
+        <div class="field"><label for="authPassword">password</label><input id="authPassword" type="password" required minlength="6" autocomplete="${authMode === 'signin' ? 'current-password' : 'new-password'}" /></div>
+        <button class="primary-btn" type="submit" ${authBusy ? 'disabled' : ''}>${authBusy ? 'working…' : (authMode === 'signin' ? 'Sign in' : 'Sign up')}</button>
+        <div class="auth-toggle">${authMode === 'signin' ? 'New to the wire?' : 'Already have a line?'} <button type="button" class="btn-link" id="authToggleBtn">${authMode === 'signin' ? 'Sign up' : 'Sign in'}</button></div>
       </form>
     </div>
   `;
-
-  document.getElementById('authToggleBtn').onclick = () => {
-    authMode = authMode === 'signin' ? 'signup' : 'signin';
-    authMsg = null;
-    renderAuthPanel();
-  };
-
+  document.getElementById('authToggleBtn').onclick = () => { authMode = authMode === 'signin' ? 'signup' : 'signin'; authMsg = null; renderAuthPanel(); };
   document.getElementById('authForm').onsubmit = async (e) => {
     e.preventDefault();
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value;
     authBusy = true; authMsg = null; renderAuthPanel();
-
-    let result;
-    if (authMode === 'signin'){
-      result = await supabase.auth.signInWithPassword({ email, password });
-    } else {
-      result = await supabase.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: REDIRECT_URL }
-      });
-    }
-
+    let result = authMode === 'signin'
+      ? await supabase.auth.signInWithPassword({ email, password })
+      : await supabase.auth.signUp({ email, password, options: { emailRedirectTo: REDIRECT_URL } });
     authBusy = false;
     if (result.error){
       authMsg = { type:'error', text: result.error.message };
@@ -559,126 +652,81 @@ function renderAuthPanel(){
       authMsg = { type:'ok', text: 'Account created. Check your email to confirm, then sign in.' };
       authMode = 'signin';
       renderAuthPanel();
+    } else {
+      celebrate('big');
     }
   };
 }
 
-// ---------------- render: compose ----------------
+// ---------------- compose ----------------
 function renderCompose(){
   if (!session || !profile){ composePanel.innerHTML = ''; return; }
-
   composePanel.innerHTML = `
     <div class="compose">
       <div class="avatar">${initials(profile.username)}</div>
       <div class="compose-body">
-        <textarea id="composeText" placeholder="What's moving on the wire?" maxlength="400" rows="2"></textarea>
+        <textarea id="composeText" placeholder="What's moving on the wire?" maxlength="${MAX_POST_LEN + 50}" rows="2">${escapeHtml(composeDraft)}</textarea>
+        <div id="composeMsg"></div>
         <div class="compose-footer">
-          <span class="char-count" id="charCount">555</span>
+          <span class="char-count" id="charCount">${MAX_POST_LEN - composeDraft.length}</span>
           <button class="primary-btn" id="sendBtn">Send dispatch</button>
         </div>
       </div>
     </div>
   `;
+  updateComposeVisibility();
 
   const textarea = document.getElementById('composeText');
   const charCount = document.getElementById('charCount');
   const sendBtn = document.getElementById('sendBtn');
 
+  textarea.style.height = 'auto';
+  textarea.style.height = textarea.scrollHeight + 'px';
+
   textarea.addEventListener('input', () => {
+    composeDraft = textarea.value;
     textarea.style.height = 'auto';
     textarea.style.height = textarea.scrollHeight + 'px';
-    const remaining = 555 - textarea.value.length;
+    const remaining = MAX_POST_LEN - textarea.value.length;
     charCount.textContent = remaining;
     charCount.className = 'char-count' + (remaining < 0 ? ' over' : remaining < 30 ? ' warn' : '');
   });
 
   sendBtn.onclick = async () => {
     const content = textarea.value.trim();
-    if (!content || content.length > 555) return;
+    const msgEl = document.getElementById('composeMsg');
+    msgEl.innerHTML = '';
+    if (!content || content.length > MAX_POST_LEN) return;
+    const mod = moderateText(content);
+    if (!mod.ok){ msgEl.innerHTML = `<div class="auth-msg error">${escapeHtml(mod.reason)}</div>`; return; }
+
     sendBtn.disabled = true;
-    const { error } = await supabase.from('microblog-posts').insert({
-      user_id: session.user.id,
-      content
-    });
+    const { error } = await supabase.from('microblog-posts').insert({ user_id: session.user.id, content });
     sendBtn.disabled = false;
-    if (error){
-      alert('Could not send dispatch: ' + error.message);
-      return;
-    }
+    if (error){ msgEl.innerHTML = `<div class="auth-msg error">Could not send dispatch: ${escapeHtml(error.message)}</div>`; return; }
+
+    composeDraft = '';
     textarea.value = '';
     textarea.style.height = 'auto';
-    charCount.textContent = '555';
+    charCount.textContent = MAX_POST_LEN;
     charCount.className = 'char-count';
+    celebrate('big');
   };
 }
 
-// ---------------- render: feed ----------------
-function renderFeed(){
-  // Apply filters
-  let displayPosts = posts.filter(p => {
-    // Topic Filter (Safe String Includes)
-    if (activeFilters.topic) {
-      const lowerContent = p.content.toLowerCase();
-      const lowerTopic = activeFilters.topic.toLowerCase();
-      if (!lowerContent.includes(lowerTopic)) return false;
-    }
-    // User Filter
-    if (activeFilters.user) {
-      const lowerUser = p.username.toLowerCase();
-      const lowerFilter = activeFilters.user.toLowerCase().replace('@', '');
-      if (!lowerUser.includes(lowerFilter)) return false;
-    }
-    // Date Filter
-    if (activeFilters.date) {
-      const postDate = new Date(p.created_at).toISOString().split('T')[0];
-      if (postDate < activeFilters.date) return false;
-    }
-    return true;
-  });
+// ---------------- main view dispatcher ----------------
+function renderMain(){
+  if (currentView === 'search') return renderSearchView();
+  if (currentView === 'leaderboard') return renderLeaderboardView();
+  return renderFeedView();
+}
 
-  if (displayPosts.length === 0){
-    emptyStateEl.innerHTML = `<div class="empty-state"><div class="mark">The wire is quiet.</div>${posts.length > 0 ? 'No matches found for your search.' : (session ? 'Send the first dispatch above.' : 'Sign in to see it come alive.')}</div>`;
-    feedEl.innerHTML = '';
+function renderFeedView(){
+  if (posts.length === 0){
+    mainView.innerHTML = `<div class="empty-state"><div class="mark">The wire is quiet.</div>${session ? 'Send the first dispatch above.' : 'Sign in to see it come alive.'}</div>`;
     return;
   }
-  emptyStateEl.innerHTML = '';
-
-  feedEl.innerHTML = displayPosts.map(p => {
-    const liked = myLikes.has(p.id);
-    const count = likeCounts[p.id] || 0;
-    const mine = session && p.user_id === session.user.id;
-    const aura = auraMap[p.user_id] !== undefined ? auraMap[p.user_id] : 0;
-
-    return `
-      <article class="post" data-id="${p.id}">
-        <div class="avatar">${initials(p.username)}</div>
-        <div class="post-body">
-          <div class="post-head">
-            <span class="post-user">
-              @${escapeHtml(p.username)}
-              <span class="aura-badge" title="Average Likes per Post">⚡ ${aura}</span>
-            </span>
-            <span class="post-time">${timeAgo(p.created_at)}</span>
-          </div>
-          <div class="post-content">${parseContentWithMedia(p.content)}</div>
-          <div class="post-actions">
-            <button class="like-btn ${liked ? 'liked' : ''}" data-like="${p.id}" ${session ? '' : 'disabled'}>
-              <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.2 2 4.5 5.6 4c2-.3 3.7.7 6.4 3 2.7-2.3 4.4-3.3 6.4-3 3.6.5 5.2 4.2 3.6 7.7C19.5 16.4 12 21 12 21z"/></svg>
-              <span>${count > 0 ? count : ''}</span>
-            </button>
-            ${mine ? `<button class="delete-btn" data-delete="${p.id}">withdraw</button>` : ''}
-          </div>
-        </div>
-      </article>
-    `;
-  }).join('');
-
-  feedEl.querySelectorAll('[data-like]').forEach(btn => {
-    btn.onclick = () => toggleLike(btn.getAttribute('data-like'));
-  });
-  feedEl.querySelectorAll('[data-delete]').forEach(btn => {
-    btn.onclick = () => deletePost(btn.getAttribute('data-delete'));
-  });
+  mainView.innerHTML = `<div class="feed">${posts.map(postCardHtml).join('')}</div>`;
 }
 
 async function toggleLike(postId){
@@ -687,17 +735,16 @@ async function toggleLike(postId){
   if (liked){
     myLikes.delete(postId);
     likeCounts[postId] = Math.max(0, (likeCounts[postId]||1) - 1);
-    renderFeed();
-    const { error } = await supabase.from('microblog-likes')
-      .delete().eq('post_id', postId).eq('user_id', session.user.id);
-    if (error){ await loadLikes(); renderFeed(); }
+    renderMain();
+    const { error } = await supabase.from('microblog-likes').delete().eq('post_id', postId).eq('user_id', session.user.id);
+    if (error){ await loadEngagement(); renderMain(); }
   } else {
     myLikes.add(postId);
     likeCounts[postId] = (likeCounts[postId]||0) + 1;
-    renderFeed();
-    const { error } = await supabase.from('microblog-likes')
-      .insert({ post_id: postId, user_id: session.user.id });
-    if (error){ await loadLikes(); renderFeed(); }
+    renderMain();
+    const { error } = await supabase.from('microblog-likes').insert({ post_id: postId, user_id: session.user.id });
+    if (error){ await loadEngagement(); renderMain(); }
+    else celebrate('small');
   }
 }
 
@@ -706,7 +753,229 @@ async function deletePost(postId){
   const { error } = await supabase.from('microblog-posts').delete().eq('id', postId);
   if (error){ alert('Could not withdraw: ' + error.message); return; }
   posts = posts.filter(p => p.id !== postId);
-  renderFeed();
+  renderMain();
+}
+
+async function toggleComments(postId){
+  if (expandedPosts.has(postId)){
+    expandedPosts.delete(postId);
+  } else {
+    expandedPosts.add(postId);
+    if (!commentsByPost[postId]){
+      renderMain();
+      await fetchComments(postId);
+    }
+  }
+  renderMain();
+}
+
+async function fetchComments(postId){
+  const { data, error } = await supabase.from('microblog-comments').select('*').eq('post_id', postId).order('created_at', { ascending: true });
+  if (error){ commentsByPost[postId] = []; return; }
+  await ensureProfiles([...new Set(data.map(c => c.user_id))]);
+  commentsByPost[postId] = data.map(c => ({ ...c, username: profileCache[c.user_id]?.username || 'dispatcher' }));
+}
+
+async function sendComment(postId){
+  if (!session) return;
+  const ta = document.querySelector(`[data-comment-input="${postId}"]`);
+  if (!ta) return;
+  const content = ta.value.trim();
+  if (!content || content.length > MAX_COMMENT_LEN) return;
+  const mod = moderateText(content);
+  if (!mod.ok){ alert(mod.reason); return; }
+
+  ta.disabled = true;
+  const { error } = await supabase.from('microblog-comments').insert({ post_id: postId, user_id: session.user.id, content });
+  ta.disabled = false;
+  if (error){ alert('Could not send reply: ' + error.message); return; }
+  ta.value = '';
+  celebrate('small');
+}
+
+async function deleteComment(commentId, postId){
+  if (commentsByPost[postId]) commentsByPost[postId] = commentsByPost[postId].filter(c => c.id !== commentId);
+  commentCounts[postId] = Math.max(0, (commentCounts[postId]||1) - 1);
+  renderMain();
+  const { error } = await supabase.from('microblog-comments').delete().eq('id', commentId);
+  if (error){ await fetchComments(postId); await loadEngagement(); renderMain(); }
+}
+
+// ---------------- delegated interactions (feed + search share this) ----------------
+document.addEventListener('click', (e) => {
+  const likeBtn = e.target.closest('[data-like]');
+  if (likeBtn){ toggleLike(likeBtn.getAttribute('data-like')); return; }
+  const delBtn = e.target.closest('[data-delete]');
+  if (delBtn){ deletePost(delBtn.getAttribute('data-delete')); return; }
+  const cToggle = e.target.closest('[data-comment-toggle]');
+  if (cToggle){ toggleComments(cToggle.getAttribute('data-comment-toggle')); return; }
+  const cSend = e.target.closest('[data-comment-send]');
+  if (cSend){ sendComment(cSend.getAttribute('data-comment-send')); return; }
+  const cDel = e.target.closest('[data-comment-delete]');
+  if (cDel){
+    const row = cDel.closest('.comments-section');
+    const postId = row ? row.id.replace('comments-', '') : null;
+    if (postId) deleteComment(cDel.getAttribute('data-comment-delete'), postId);
+  }
+});
+
+// ---------------- search view ----------------
+function renderSearchView(){
+  mainView.innerHTML = `
+    <div class="search-view">
+      <div class="search-box"><input id="searchInput" type="text" placeholder="Search dispatches, topics, or @people…" autocomplete="off" /></div>
+      <div id="searchResults"></div>
+    </div>
+  `;
+  const input = document.getElementById('searchInput');
+  input.value = searchQuery;
+  input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
+  input.addEventListener('input', () => {
+    searchQuery = input.value;
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(runSearch, 300);
+  });
+  renderSearchResults();
+}
+
+function renderSearchResults(){
+  const el = document.getElementById('searchResults');
+  if (!el) return;
+  const q = searchQuery.trim();
+  if (searchBusy){ el.innerHTML = `<div class="search-status">searching…</div>`; return; }
+  if (!q){ el.innerHTML = ''; return; }
+  if (!searchResults.profiles.length && !searchResults.posts.length){
+    el.innerHTML = `<div class="empty-state"><div class="mark">Nothing on the wire matches.</div></div>`;
+    return;
+  }
+  el.innerHTML = `
+    ${searchResults.profiles.length ? `
+      <div class="section-heading"><h2>People</h2></div>
+      <div class="people-grid">
+        ${searchResults.profiles.map(p => `
+          <div class="person-card">
+            <div class="avatar">${initials(p.username)}</div>
+            <div class="person-info">
+              <span class="person-user">@${escapeHtml(p.username)}</span>
+              ${p.bio ? `<span class="person-bio">${escapeHtml(p.bio)}</span>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
+    ${searchResults.posts.length ? `
+      <div class="section-heading"><h2>Dispatches</h2></div>
+      <div class="feed">${searchResults.posts.map(postCardHtml).join('')}</div>
+    ` : ''}
+  `;
+}
+
+async function runSearch(){
+  const q = searchQuery.trim();
+  if (!q){ searchResults = { posts: [], profiles: [] }; renderSearchResults(); return; }
+  searchBusy = true; renderSearchResults();
+
+  const [{ data: profs }, { data: postRows }] = await Promise.all([
+    supabase.from('microblog-profiles').select('id,username,bio').ilike('username', `%${q}%`).limit(8),
+    supabase.from('microblog-posts').select('*').ilike('content', `%${q}%`).order('created_at', { ascending: false }).limit(25)
+  ]);
+
+  await ensureProfiles([...new Set((postRows||[]).map(p => p.user_id))]);
+  searchResults = {
+    profiles: profs || [],
+    posts: (postRows||[]).map(p => ({ ...p, username: profileCache[p.user_id]?.username || 'dispatcher' }))
+  };
+  searchBusy = false;
+  renderSearchResults();
+}
+
+// ---------------- leaderboard view ----------------
+function renderLeaderboardView(){
+  if (!leaderboard.length){
+    mainView.innerHTML = `<div class="empty-state"><div class="mark">No aura yet.</div>Be the first to send a dispatch.</div>`;
+    return;
+  }
+  mainView.innerHTML = `
+    <div class="leaderboard">
+      <div class="section-heading"><h2>Top Aura</h2><p>Ranked live by likes + replies earned per dispatch, top 50.</p></div>
+      ${leaderboard.map((r, i) => `
+        <div class="lb-row ${session && r.user_id === session.user.id ? 'lb-row-me' : ''}">
+          <span class="lb-rank">${i + 1}</span>
+          <div class="avatar">${initials(r.username)}</div>
+          <div class="lb-info">
+            <span class="lb-user">@${escapeHtml(r.username)}</span>
+            <span class="lb-meta">${r.total_posts} dispatches · ${r.total_likes} likes · ${r.total_comments} replies</span>
+          </div>
+          <span class="aura-badge lb-score">⚡ ${r.aura_score}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ---------------- account modal ----------------
+async function openAccountModal(){
+  accountModalOpen = true;
+  accountStats = null;
+  renderAccountModal();
+  const { count } = await supabase.from('microblog-posts').select('id', { count: 'exact', head: true }).eq('user_id', session.user.id);
+  accountStats = { totalPosts: count || 0, aura: auraMap[session.user.id] || 0 };
+  renderAccountModal();
+}
+function closeAccountModal(){ accountModalOpen = false; renderAccountModal(); }
+
+function renderAccountModal(){
+  if (!accountModalOpen || !session || !profile){ accountModalRoot.innerHTML = ''; return; }
+  accountModalRoot.innerHTML = `
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-card">
+        <div class="modal-head"><h2>Your line on the wire</h2><button class="btn-link" id="closeModalBtn">close</button></div>
+        <div class="modal-avatar-row">
+          <div class="avatar avatar-lg">${initials(profile.username)}</div>
+          <div class="modal-stats">
+            <span>${accountStats ? accountStats.totalPosts : '…'} dispatches</span>
+            <span class="aura-badge" style="width:fit-content;">⚡ ${accountStats ? accountStats.aura : '…'} aura</span>
+          </div>
+        </div>
+        <div id="accountMsg"></div>
+        <div class="field"><label>email</label><input value="${escapeHtml(session.user.email || '')}" disabled /></div>
+        <div class="field"><label for="acctUsername">username</label><input id="acctUsername" value="${escapeHtml(profile.username)}" maxlength="30" /></div>
+        <div class="field"><label for="acctBio">bio</label><textarea id="acctBio" maxlength="160" rows="3">${escapeHtml(profile.bio || '')}</textarea></div>
+        <div class="modal-actions">
+          <button class="primary-btn" id="saveAccountBtn">Save changes</button>
+          <button class="secondary-btn" id="modalSignOutBtn">Sign off</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('closeModalBtn').onclick = closeAccountModal;
+  document.getElementById('modalOverlay').addEventListener('click', (e) => { if (e.target.id === 'modalOverlay') closeAccountModal(); });
+  document.getElementById('modalSignOutBtn').onclick = async () => { await supabase.auth.signOut(); closeAccountModal(); };
+  document.getElementById('saveAccountBtn').onclick = async () => {
+    const newUsername = document.getElementById('acctUsername').value.trim();
+    const newBio = document.getElementById('acctBio').value.trim();
+    const msgEl = document.getElementById('accountMsg');
+    if (!/^[a-zA-Z0-9_]{3,30}$/.test(newUsername)){
+      msgEl.innerHTML = `<div class="auth-msg error">Usernames need 3–30 letters, numbers, or underscores.</div>`;
+      return;
+    }
+    const modBio = newBio ? moderateText(newBio) : { ok: true };
+    if (!modBio.ok){ msgEl.innerHTML = `<div class="auth-msg error">${escapeHtml(modBio.reason)}</div>`; return; }
+
+    const { error } = await supabase.from('microblog-profiles').update({ username: newUsername, bio: newBio }).eq('id', session.user.id);
+    if (error){
+      msgEl.innerHTML = `<div class="auth-msg error">${error.code === '23505' ? 'That username is already taken.' : escapeHtml(error.message)}</div>`;
+      return;
+    }
+    profile.username = newUsername;
+    profile.bio = newBio;
+    profileCache[session.user.id] = profile;
+    renderSessionBox();
+    renderMain();
+    msgEl.innerHTML = `<div class="auth-msg ok">Saved.</div>`;
+    celebrate('small');
+  };
 }
 
 // ---------------- data loading ----------------
@@ -716,74 +985,40 @@ async function loadProfile(userId){
     await new Promise(r => setTimeout(r, 700));
     ({ data, error } = await supabase.from('microblog-profiles').select('*').eq('id', userId).maybeSingle());
   }
-  profile = data || { id: userId, username: (session.user.email||'dispatcher').split('@')[0] };
-}
-
-async function loadAura() {
-  const { data, error } = await supabase.from('user_aura_view').select('user_id, aura_score');
-  if (!error && data) {
-    data.forEach(row => {
-      auraMap[row.user_id] = row.aura_score;
-    });
-  }
+  profile = data || { id: userId, username: (session.user.email || 'dispatcher').split('@')[0], bio: '' };
+  profileCache[userId] = profile;
 }
 
 async function loadPosts(){
-  const { data: postRows, error } = await supabase
-    .from('microblog-posts')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(100);
+  const { data: postRows, error } = await supabase.from('microblog-posts').select('*').order('created_at', { ascending: false }).limit(100);
   if (error){ console.error(error); return; }
-
-  const userIds = [...new Set(postRows.map(p => p.user_id))];
-  let profilesById = {};
-  if (userIds.length){
-    const { data: profs } = await supabase.from('microblog-profiles').select('id, username').in('id', userIds);
-    (profs||[]).forEach(pr => profilesById[pr.id] = pr.username);
-  }
-
-  posts = postRows.map(p => ({ ...p, username: profilesById[p.user_id] || 'dispatcher' }));
-  await loadLikes();
-  await loadAura();
+  await ensureProfiles([...new Set(postRows.map(p => p.user_id))]);
+  posts = postRows.map(p => ({ ...p, username: profileCache[p.user_id]?.username || 'dispatcher' }));
+  await loadEngagement();
 }
 
-async function loadLikes(){
+async function loadEngagement(){
   const postIds = posts.map(p => p.id);
-  likeCounts = {};
-  myLikes = new Set();
+  likeCounts = {}; myLikes = new Set(); commentCounts = {};
   if (postIds.length === 0) return;
 
-  const { data: likeRows } = await supabase.from('microblog-likes').select('post_id, user_id').in('post_id', postIds);
+  const [{ data: likeRows }, { data: commentRows }] = await Promise.all([
+    supabase.from('microblog-likes').select('post_id, user_id').in('post_id', postIds),
+    supabase.from('microblog-comments').select('post_id').in('post_id', postIds)
+  ]);
   (likeRows||[]).forEach(l => {
     likeCounts[l.post_id] = (likeCounts[l.post_id]||0) + 1;
     if (session && l.user_id === session.user.id) myLikes.add(l.post_id);
   });
+  (commentRows||[]).forEach(c => { commentCounts[c.post_id] = (commentCounts[c.post_id]||0) + 1; });
 }
 
-// ---------------- Search Logic ----------------
-function setupSearch() {
-  if (session) {
-    searchPanel.style.display = 'block';
-  } else {
-    searchPanel.style.display = 'none';
-  }
-
-  applySearchBtn.onclick = () => {
-    // Sanitize inputs by trimming
-    activeFilters.topic = searchTopic.value.trim();
-    activeFilters.user = searchUser.value.trim();
-    activeFilters.date = searchDate.value;
-    renderFeed();
-  };
-
-  clearSearchBtn.onclick = () => {
-    searchTopic.value = '';
-    searchUser.value = '';
-    searchDate.value = '';
-    activeFilters = { topic: '', user: '', date: '' };
-    renderFeed();
-  };
+async function loadAura(){
+  const { data, error } = await supabase.from('user_aura_view').select('*');
+  if (error) return;
+  auraMap = {};
+  (data||[]).forEach(r => auraMap[r.user_id] = r.aura_score);
+  leaderboard = [...data].sort((a,b) => b.aura_score - a.aura_score).slice(0, 50);
 }
 
 // ---------------- realtime ----------------
@@ -792,47 +1027,58 @@ function subscribeRealtime(){
   if (channel) supabase.removeChannel(channel);
   channel = supabase.channel('wire-feed')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'microblog-posts' }, async (payload) => {
-      const { data: prof } = await supabase.from('microblog-profiles').select('username').eq('id', payload.new.user_id).maybeSingle();
-      posts.unshift({ ...payload.new, username: prof?.username || 'dispatcher' });
-      renderFeed();
+      await ensureProfiles([payload.new.user_id]);
+      posts.unshift({ ...payload.new, username: profileCache[payload.new.user_id]?.username || 'dispatcher' });
+      await loadAura();
+      if (currentView === 'feed') renderMain();
     })
-    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'microblog-posts' }, (payload) => {
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'microblog-posts' }, async (payload) => {
       posts = posts.filter(p => p.id !== payload.old.id);
-      renderFeed();
+      await loadAura();
+      renderMain();
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'microblog-likes' }, async () => {
-      await loadLikes();
+      await loadEngagement();
       await loadAura();
-      renderFeed();
+      renderMain();
+    })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'microblog-comments' }, async (payload) => {
+      const c = payload.new;
+      commentCounts[c.post_id] = (commentCounts[c.post_id]||0) + 1;
+      if (commentsByPost[c.post_id]){
+        await ensureProfiles([c.user_id]);
+        commentsByPost[c.post_id].push({ ...c, username: profileCache[c.user_id]?.username || 'dispatcher' });
+      }
+      await loadAura();
+      renderMain();
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'microblog-comments' }, async (payload) => {
+      const c = payload.old;
+      commentCounts[c.post_id] = Math.max(0, (commentCounts[c.post_id]||1) - 1);
+      if (commentsByPost[c.post_id]) commentsByPost[c.post_id] = commentsByPost[c.post_id].filter(x => x.id !== c.id);
+      await loadAura();
+      renderMain();
     })
     .subscribe();
 }
 
 // ---------------- boot ----------------
 async function refreshAll(){
-  if (session){
-    await loadProfile(session.user.id);
-  } else {
-    profile = null;
-  }
+  if (session) await loadProfile(session.user.id);
+  else profile = null;
   await loadPosts();
+  await loadAura();
   renderSessionBox();
+  renderNav();
   renderAuthPanel();
   renderCompose();
-  setupSearch();
-  renderFeed();
+  renderMain();
+  renderAccountModal();
   subscribeRealtime();
 }
 
-supabase.auth.onAuthStateChange((_event, newSession) => {
-  session = newSession;
-  refreshAll();
-});
-
-supabase.auth.getSession().then(({ data }) => {
-  session = data.session;
-  refreshAll();
-});
+supabase.auth.onAuthStateChange((_event, newSession) => { session = newSession; refreshAll(); });
+supabase.auth.getSession().then(({ data }) => { session = data.session; refreshAll(); });
 </script>
 </body>
 </html>

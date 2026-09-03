@@ -399,14 +399,20 @@ function renderModal(){
 }
 
 async function submitFlag(){
+  // Guard against a double click or an Enter-plus-click firing this twice
+  // before the button's disabled state has re-rendered.
+  if (flagBusy) return;
   const el = document.getElementById('flagInputEl');
   const value = (el ? el.value : flagInput).trim();
   if (!value || !openChallenge || !session) return;
+  const challengeAtSubmit = openChallenge; // capture in case the modal is closed/reopened mid-request
   flagBusy = true; flagMsg = null; renderModal();
 
-  // Flag is checked server-side via RPC so the correct value is never exposed to the client.
+  // Flag is checked server-side via RPC so the correct value is never exposed to the client,
+  // and the unique (user_id, challenge_id) constraint on breach-solves means a duplicate
+  // insert here is a no-op rather than a second point award.
   const { data, error } = await supabase.rpc('breach-submit-flag', {
-    p_challenge_id: openChallenge.id,
+    p_challenge_id: challengeAtSubmit.id,
     p_flag: value
   });
 
@@ -417,13 +423,14 @@ async function submitFlag(){
     return;
   }
   if (data === true){
-    solvesByUser.add(openChallenge.id);
-    solveCounts[openChallenge.id] = (solveCounts[openChallenge.id]||0) + 1;
-    myPoints += openChallenge.points;
-    renderSessionBox();
+    // Re-derive everything from the database rather than incrementing local
+    // counters — this is what actually prevents double-counting, since it's
+    // correct no matter how many times it runs or whether the realtime
+    // listener below also fires for the same insert.
+    await Promise.all([loadSolveCounts(), loadMySolves(), loadLeaderboard()]);
     flagMsg = { type:'ok', text: 'Correct — challenge solved.' };
     celebrate();
-    await loadLeaderboard();
+    renderSessionBox();
   } else {
     flagMsg = { type:'error', text: 'Incorrect flag. Try again.' };
   }
@@ -503,9 +510,15 @@ function subscribeRealtime(){
   if (channel){ supabase.removeChannel(channel); channel = null; }
   channel = supabase.channel('breach-board')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'breach-solves' }, async () => {
-      await loadSolveCounts();
-      await loadLeaderboard();
-      if (session) await loadMySolves();
+      await Promise.all([loadSolveCounts(), loadLeaderboard(), session ? loadMySolves() : Promise.resolve()]);
+      renderSessionBox();
+      renderMain();
+      renderModal();
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'breach-solves' }, async () => {
+      // Kept symmetric with INSERT above so counts/points never drift if a
+      // solve is ever removed (e.g. an admin correcting a mistake).
+      await Promise.all([loadSolveCounts(), loadLeaderboard(), session ? loadMySolves() : Promise.resolve()]);
       renderSessionBox();
       renderMain();
       renderModal();

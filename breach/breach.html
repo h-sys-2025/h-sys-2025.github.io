@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Breach — challenge board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.sh; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://vgytjiqlscdmhwpkfrox.supabase.co wss://vgytjiqlscdmhwpkfrox.supabase.co https://esm.sh;">
+<style>
+  :root{
+    --ink:#14181C;
+    --ink-2:#1B2126;
+    --ink-3:#20272D;
+    --paper:#EDEAE3;
+    --paper-dim:#A9AEA6;
+    --hairline: rgba(237,234,227,0.12);
+    --hairline-strong: rgba(237,234,227,0.22);
+    --signal:#E8A33D;
+    --signal-dim: rgba(232,163,61,0.15);
+    --wire-green:#6FA88A;
+    --wire-green-dim: rgba(111,168,138,0.15);
+    --danger:#C96A56;
+    --danger-dim: rgba(201,106,86,0.15);
+    --radius: 3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+  button{font-family:inherit;cursor:pointer;}
+  code, .mono{font-family:'JetBrains Mono', monospace;}
+
+  .app{
+    max-width:760px;
+    margin:0 auto;
+    min-height:100vh;
+    border-left:1px solid var(--hairline);
+    border-right:1px solid var(--hairline);
+    display:flex;
+    flex-direction:column;
+  }
+
+  header{
+    position:sticky; top:0; z-index:10;
+    background:rgba(20,24,28,0.92);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--hairline);
+  }
+  .header-top{
+    padding:18px 24px 14px;
+    display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+  }
+  .brand{display:flex; align-items:baseline; gap:10px;}
+  .brand-mark{font-family:'Fraunces',serif; font-weight:700; font-size:26px; letter-spacing:-0.01em;}
+  .brand-tag{font-size:12px; color:var(--paper-dim); font-style:italic; font-family:'Fraunces',serif;}
+  .session-box{font-size:13px; color:var(--paper-dim); display:flex; align-items:center; gap:12px;}
+  .pts-pill{font-size:12px; color:var(--signal); font-family:'JetBrains Mono',monospace;}
+  .btn-link{background:none;border:none;color:var(--signal);font-size:13px;font-weight:600;padding:0;}
+  .btn-link:hover{text-decoration:underline;}
+
+  .nav-tabs{display:flex; padding:0 24px; gap:4px;}
+  .nav-tab{background:none;border:none;color:var(--paper-dim);font-size:13px;font-weight:600;padding:10px 14px;border-bottom:2px solid transparent;letter-spacing:0.01em;}
+  .nav-tab.active{color:var(--signal); border-bottom-color:var(--signal);}
+  .nav-tab:hover{color:var(--paper);}
+
+  /* ---------- auth ---------- */
+  .auth-panel{padding:40px 24px; display:flex; flex-direction:column; gap:18px;}
+  .auth-panel h1{font-family:'Fraunces',serif; font-size:30px; font-weight:600; margin:0 0 4px 0; line-height:1.15;}
+  .auth-panel p.lede{color:var(--paper-dim); font-size:15px; margin:0 0 10px 0; max-width:46ch;}
+  .field{display:flex; flex-direction:column; gap:6px; margin-bottom:14px;}
+  .field label{font-size:12px; color:var(--paper-dim);}
+  .field input, .field textarea{
+    background:var(--ink-2); border:1px solid var(--hairline-strong); color:var(--paper);
+    padding:11px 12px; border-radius:var(--radius); font-size:14px; font-family:inherit; width:100%; resize:vertical;
+  }
+  .field input:disabled{opacity:0.5;}
+  .field input:focus, .field textarea:focus{outline:2px solid var(--signal); outline-offset:0; border-color:var(--signal);}
+  .auth-form{display:flex; flex-direction:column; gap:14px; max-width:360px;}
+  .primary-btn{background:var(--signal); color:#1B1204; border:none; padding:11px 18px; border-radius:var(--radius); font-weight:700; font-size:14px; letter-spacing:0.01em;}
+  .primary-btn:hover{filter:brightness(1.08);}
+  .primary-btn:disabled{opacity:0.5; cursor:default;}
+  .secondary-btn{background:transparent; border:1px solid var(--hairline-strong); color:var(--paper-dim); padding:9px 16px; border-radius:var(--radius); font-size:13px; font-weight:600;}
+  .secondary-btn:hover{border-color:var(--paper); color:var(--paper);}
+  .auth-toggle{font-size:13px; color:var(--paper-dim);}
+  .auth-msg{font-size:13px; padding:10px 12px; border-radius:var(--radius); border:1px solid var(--hairline-strong); margin-bottom:8px;}
+  .auth-msg.error{color:var(--danger); border-color:var(--danger);}
+  .auth-msg.ok{color:var(--wire-green); border-color:var(--wire-green);}
+
+  /* ---------- filters ---------- */
+  .filters{display:flex; gap:8px; padding:16px 24px; border-bottom:1px solid var(--hairline); flex-wrap:wrap;}
+  .filter-chip{background:var(--ink-2); border:1px solid var(--hairline-strong); color:var(--paper-dim); font-size:12.5px; font-weight:600; padding:7px 12px; border-radius:16px;}
+  .filter-chip.active{color:var(--signal); border-color:var(--signal); background:var(--signal-dim);}
+
+  /* ---------- challenge list ---------- */
+  .empty-state{padding:60px 24px; text-align:center; color:var(--paper-dim);}
+  .empty-state .mark{font-family:'Fraunces',serif; font-size:20px; color:var(--paper); margin-bottom:6px;}
+
+  .chal-grid{display:flex; flex-direction:column;}
+  .chal-card{
+    padding:18px 24px; border-bottom:1px solid var(--hairline);
+    display:flex; align-items:center; gap:16px; text-align:left;
+    background:none; border-left:none; border-right:none; border-top:none; width:100%;
+    color:inherit;
+  }
+  .chal-card:hover{background:var(--ink-2);}
+  .chal-diff{
+    width:6px; align-self:stretch; border-radius:3px; flex-shrink:0;
+  }
+  .chal-diff.easy{background:var(--wire-green);}
+  .chal-diff.medium{background:var(--signal);}
+  .chal-diff.hard{background:var(--danger);}
+  .chal-main{flex:1; min-width:0;}
+  .chal-title-row{display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;}
+  .chal-title{font-family:'Fraunces',serif; font-size:17px; font-weight:600;}
+  .chal-cat{font-size:11px; color:var(--paper-dim); background:var(--ink-3); padding:2px 7px; border-radius:4px; text-transform:uppercase; letter-spacing:0.04em;}
+  .chal-solved-badge{font-size:11px; color:var(--wire-green); background:var(--wire-green-dim); padding:2px 7px; border-radius:4px; font-weight:600;}
+  .chal-desc{font-size:13px; color:var(--paper-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:52ch;}
+  .chal-side{display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;}
+  .chal-pts{font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--signal); font-weight:600;}
+  .chal-solves{font-size:11px; color:var(--paper-dim);}
+
+  /* ---------- challenge detail modal ---------- */
+  .modal-overlay{position:fixed; inset:0; background:rgba(10,12,14,0.72); display:flex; align-items:flex-start; justify-content:center; padding:60px 20px; z-index:100; overflow-y:auto;}
+  .modal-card{background:var(--ink-3); border:1px solid var(--hairline-strong); border-radius:6px; padding:26px; max-width:460px; width:100%; animation:fadeIn 0.2s ease;}
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(-4px);} to{opacity:1; transform:translateY(0);} }
+  .modal-head{display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:6px; gap:12px;}
+  .modal-head h2{font-family:'Fraunces',serif; font-size:20px; margin:0; font-weight:600;}
+  .modal-meta{display:flex; gap:8px; align-items:center; margin-bottom:16px; flex-wrap:wrap;}
+  .modal-desc{font-size:14.5px; line-height:1.55; color:var(--paper); margin-bottom:20px; white-space:pre-wrap;}
+  .flag-row{display:flex; gap:8px;}
+  .flag-row input{
+    flex:1; background:var(--ink-2); border:1px solid var(--hairline-strong); color:var(--paper);
+    padding:10px 12px; border-radius:var(--radius); font-family:'JetBrains Mono',monospace; font-size:13.5px;
+  }
+  .flag-row input:focus{outline:2px solid var(--signal); border-color:var(--signal);}
+  .solved-note{display:flex; align-items:center; gap:8px; color:var(--wire-green); font-size:13.5px; font-weight:600; padding:10px 0;}
+
+  /* ---------- leaderboard ---------- */
+  .leaderboard{padding-bottom:8px;}
+  .lb-row{display:flex; align-items:center; gap:14px; padding:14px 24px; border-bottom:1px solid var(--hairline);}
+  .lb-row-me{background:var(--signal-dim);}
+  .lb-rank{font-family:'Fraunces',serif; font-weight:600; font-size:16px; color:var(--paper-dim); width:24px; text-align:right; flex-shrink:0;}
+  .lb-rank.top1{color:var(--signal);}
+  .avatar{width:40px;height:40px;border-radius:50%;background:var(--ink-2);border:1px solid var(--hairline-strong);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:600;font-size:15px;color:var(--signal);flex-shrink:0;}
+  .lb-info{flex:1; display:flex; flex-direction:column; min-width:0;}
+  .lb-user{font-weight:600; font-size:14px;}
+  .lb-meta{font-size:12px; color:var(--paper-dim);}
+  .lb-score{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--signal); font-weight:600;}
+  .section-heading{padding:16px 24px 6px;}
+  .section-heading h2{font-family:'Fraunces',serif; font-size:15px; font-weight:600; margin:0; text-transform:uppercase; letter-spacing:0.06em; color:var(--paper-dim);}
+  .section-heading p{margin:2px 0 0; font-size:12.5px; color:var(--paper-dim);}
+
+  footer{padding:22px 24px 40px; text-align:center; color:var(--paper-dim); font-size:12px;}
+  ::selection{background:var(--signal-dim);}
+
+  @media (max-width:480px){
+    .header-top{padding:14px 16px 10px;}
+    .nav-tabs{padding:0 12px;}
+    .filters, .chal-card, .auth-panel, .section-heading, .lb-row{padding-left:16px; padding-right:16px;}
+    .modal-card{padding:20px;}
+    .chal-desc{max-width:38ch;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="header-top">
+      <div class="brand">
+        <span class="brand-mark">Breach</span>
+        <span class="brand-tag">a challenge board</span>
+      </div>
+      <div class="session-box" id="sessionBox"></div>
+    </div>
+    <nav class="nav-tabs" id="navTabs"></nav>
+  </header>
+
+  <div id="authPanel"></div>
+  <div id="mainView"></div>
+
+  <footer>Solve at your own pace. Flags are case-sensitive.</footer>
+</div>
+
+<div id="modalRoot"></div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import confetti from 'https://esm.sh/canvas-confetti@1';
+
+const SUPABASE_URL = 'https://vgytjiqlscdmhwpkfrox.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZneXRqaXFsc2NkbWh3cGtmcm94Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyNzIwMjAsImV4cCI6MjEwMzg0ODAyMH0.RFsU37jwVyDTTqNHEQAvcjrvnQQG_67uGaDInENT1Z0';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { flowType: 'pkce', autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
+});
+
+const REDIRECT_URL = window.location.origin + window.location.pathname;
+if (window.location.hash.includes('access_token') || window.location.search.includes('code=')) {
+  window.addEventListener('load', () => setTimeout(() => history.replaceState(null, '', window.location.pathname), 300));
+}
+
+// ---------------- state ----------------
+let session = null;
+let profile = null;
+let challenges = [];         // list rows (no flag field ever sent to client)
+let solvesByUser = new Set(); // challenge ids I've solved
+let solveCounts = {};         // challenge_id -> count
+let leaderboard = [];
+let myPoints = 0;
+
+let currentView = 'challenges'; // challenges | leaderboard
+let categoryFilter = 'all';
+let authMode = 'signin';
+let authMsg = null;
+let authBusy = false;
+
+let openChallenge = null;   // challenge object currently shown in modal
+let flagInput = '';
+let flagBusy = false;
+let flagMsg = null;
+
+// ---------------- dom refs ----------------
+const sessionBox = document.getElementById('sessionBox');
+const navTabs = document.getElementById('navTabs');
+const authPanel = document.getElementById('authPanel');
+const mainView = document.getElementById('mainView');
+const modalRoot = document.getElementById('modalRoot');
+
+function initials(name){ return (name || '?').slice(0,2).toUpperCase(); }
+function escapeHtml(str){ const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
+function celebrate(){
+  confetti({ particleCount: 90, spread: 75, startVelocity: 45, origin: { y: 0.25 }, colors: ['#E8A33D', '#6FA88A', '#EDEAA3', '#EDEAE3'] });
+}
+
+// ---------------- session / nav ----------------
+function renderSessionBox(){
+  if (session && profile){
+    sessionBox.innerHTML = `<span class="pts-pill">⚡ ${myPoints} pts</span><span class="btn-link" style="color:var(--paper-dim); cursor:default;">@${escapeHtml(profile.username)}</span><button class="btn-link" id="signOutBtn">sign off</button>`;
+    document.getElementById('signOutBtn').onclick = async () => { await supabase.auth.signOut(); };
+  } else {
+    sessionBox.innerHTML = '';
+  }
+}
+
+function renderNav(){
+  const tabs = [['challenges','Challenges'], ['leaderboard','Leaderboard']];
+  navTabs.innerHTML = tabs.map(([key,label]) =>
+    `<button class="nav-tab ${currentView === key ? 'active' : ''}" data-tab="${key}">${label}</button>`
+  ).join('');
+  navTabs.querySelectorAll('[data-tab]').forEach(btn => {
+    btn.onclick = () => { currentView = btn.getAttribute('data-tab'); renderNav(); renderMain(); };
+  });
+}
+
+// ---------------- auth ----------------
+function renderAuthPanel(){
+  if (session){ authPanel.innerHTML = ''; return; }
+  authPanel.innerHTML = `
+    <div class="auth-panel">
+      <h1>${authMode === 'signin' ? 'Back on the grid.' : 'Get a foothold.'}</h1>
+      <p class="lede">${authMode === 'signin'
+        ? 'Sign in to attempt challenges and track your score.'
+        : "Create an account to start solving. You'll be assigned a handle automatically."}</p>
+      ${authMsg ? `<div class="auth-msg ${authMsg.type}">${escapeHtml(authMsg.text)}</div>` : ''}
+      <form class="auth-form" id="authForm">
+        <div class="field"><label for="authEmail">email</label><input id="authEmail" type="email" required autocomplete="email" /></div>
+        <div class="field"><label for="authPassword">password</label><input id="authPassword" type="password" required minlength="6" autocomplete="${authMode === 'signin' ? 'current-password' : 'new-password'}" /></div>
+        <button class="primary-btn" type="submit" ${authBusy ? 'disabled' : ''}>${authBusy ? 'working…' : (authMode === 'signin' ? 'Sign in' : 'Sign up')}</button>
+        <div class="auth-toggle">${authMode === 'signin' ? 'New here?' : 'Already have access?'} <button type="button" class="btn-link" id="authToggleBtn">${authMode === 'signin' ? 'Sign up' : 'Sign in'}</button></div>
+      </form>
+    </div>
+  `;
+  document.getElementById('authToggleBtn').onclick = () => { authMode = authMode === 'signin' ? 'signup' : 'signin'; authMsg = null; renderAuthPanel(); };
+  document.getElementById('authForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    authBusy = true; authMsg = null; renderAuthPanel();
+    let result = authMode === 'signin'
+      ? await supabase.auth.signInWithPassword({ email, password })
+      : await supabase.auth.signUp({ email, password, options: { emailRedirectTo: REDIRECT_URL } });
+    authBusy = false;
+    if (result.error){
+      authMsg = { type:'error', text: result.error.message };
+      renderAuthPanel();
+    } else if (authMode === 'signup' && !result.data.session){
+      authMsg = { type:'ok', text: 'Account created. Check your email to confirm, then sign in.' };
+      authMode = 'signin';
+      renderAuthPanel();
+    }
+  };
+}
+
+// ---------------- main dispatcher ----------------
+function renderMain(){
+  if (currentView === 'leaderboard') return renderLeaderboardView();
+  return renderChallengesView();
+}
+
+function renderChallengesView(){
+  const cats = ['all', ...new Set(challenges.map(c => c.category))];
+  const filtersHtml = `
+    <div class="filters">
+      ${cats.map(c => `<button class="filter-chip ${categoryFilter === c ? 'active' : ''}" data-cat="${escapeHtml(c)}">${c === 'all' ? 'All' : escapeHtml(c)}</button>`).join('')}
+    </div>`;
+
+  const visible = challenges.filter(c => categoryFilter === 'all' || c.category === categoryFilter);
+
+  if (visible.length === 0){
+    mainView.innerHTML = filtersHtml + `<div class="empty-state"><div class="mark">No challenges here yet.</div>Check back soon.</div>`;
+  } else {
+    mainView.innerHTML = filtersHtml + `<div class="chal-grid">${visible.map(challengeCardHtml).join('')}</div>`;
+  }
+
+  mainView.querySelectorAll('[data-cat]').forEach(btn => {
+    btn.onclick = () => { categoryFilter = btn.getAttribute('data-cat'); renderMain(); };
+  });
+  mainView.querySelectorAll('[data-open]').forEach(btn => {
+    btn.onclick = () => openChallengeModal(btn.getAttribute('data-open'));
+  });
+}
+
+function challengeCardHtml(c){
+  const solved = solvesByUser.has(c.id);
+  const solves = solveCounts[c.id] || 0;
+  return `
+    <button class="chal-card" data-open="${c.id}">
+      <div class="chal-diff ${c.difficulty}"></div>
+      <div class="chal-main">
+        <div class="chal-title-row">
+          <span class="chal-title">${escapeHtml(c.title)}</span>
+          <span class="chal-cat">${escapeHtml(c.category)}</span>
+          ${solved ? `<span class="chal-solved-badge">✓ solved</span>` : ''}
+        </div>
+        <div class="chal-desc">${escapeHtml(c.description || '')}</div>
+      </div>
+      <div class="chal-side">
+        <span class="chal-pts">${c.points}</span>
+        <span class="chal-solves">${solves} solve${solves === 1 ? '' : 's'}</span>
+      </div>
+    </button>
+  `;
+}
+
+// ---------------- challenge modal ----------------
+function openChallengeModal(id){
+  openChallenge = challenges.find(c => c.id === id) || null;
+  flagInput = ''; flagMsg = null; flagBusy = false;
+  renderModal();
+}
+function closeModal(){ openChallenge = null; renderModal(); }
+
+function renderModal(){
+  if (!openChallenge){ modalRoot.innerHTML = ''; return; }
+  const c = openChallenge;
+  const solved = solvesByUser.has(c.id);
+  modalRoot.innerHTML = `
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-card">
+        <div class="modal-head">
+          <h2>${escapeHtml(c.title)}</h2>
+          <button class="btn-link" id="closeModalBtn">close</button>
+        </div>
+        <div class="modal-meta">
+          <span class="chal-cat">${escapeHtml(c.category)}</span>
+          <span class="chal-pts">${c.points} pts</span>
+          <span class="chal-solves">${solveCounts[c.id] || 0} solves</span>
+        </div>
+        <p class="modal-desc">${escapeHtml(c.description || '')}</p>
+        ${flagMsg ? `<div class="auth-msg ${flagMsg.type}" style="margin-bottom:12px;">${escapeHtml(flagMsg.text)}</div>` : ''}
+        ${solved
+          ? `<div class="solved-note">✓ You solved this challenge.</div>`
+          : session
+            ? `<div class="flag-row">
+                 <input id="flagInputEl" type="text" placeholder="FLAG{...}" autocomplete="off" spellcheck="false" value="${escapeHtml(flagInput)}" />
+                 <button class="primary-btn" id="submitFlagBtn" ${flagBusy ? 'disabled' : ''}>${flagBusy ? 'checking…' : 'Submit'}</button>
+               </div>`
+            : `<div class="auth-msg">Sign in to submit a flag.</div>`
+        }
+      </div>
+    </div>
+  `;
+  document.getElementById('closeModalBtn').onclick = closeModal;
+  document.getElementById('modalOverlay').addEventListener('click', (e) => { if (e.target.id === 'modalOverlay') closeModal(); });
+  const submitBtn = document.getElementById('submitFlagBtn');
+  if (submitBtn){
+    submitBtn.onclick = submitFlag;
+    document.getElementById('flagInputEl').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitFlag(); });
+  }
+}
+
+async function submitFlag(){
+  const el = document.getElementById('flagInputEl');
+  const value = (el ? el.value : flagInput).trim();
+  if (!value || !openChallenge || !session) return;
+  flagBusy = true; flagMsg = null; renderModal();
+
+  // Flag is checked server-side via RPC so the correct value is never exposed to the client.
+  const { data, error } = await supabase.rpc('breach-submit-flag', {
+    p_challenge_id: openChallenge.id,
+    p_flag: value
+  });
+
+  flagBusy = false;
+  if (error){
+    flagMsg = { type:'error', text: 'Could not check flag: ' + error.message };
+    renderModal();
+    return;
+  }
+  if (data === true){
+    solvesByUser.add(openChallenge.id);
+    solveCounts[openChallenge.id] = (solveCounts[openChallenge.id]||0) + 1;
+    myPoints += openChallenge.points;
+    renderSessionBox();
+    flagMsg = { type:'ok', text: 'Correct — challenge solved.' };
+    celebrate();
+    await loadLeaderboard();
+  } else {
+    flagMsg = { type:'error', text: 'Incorrect flag. Try again.' };
+  }
+  renderModal();
+}
+
+// ---------------- leaderboard ----------------
+function renderLeaderboardView(){
+  if (!leaderboard.length){
+    mainView.innerHTML = `<div class="empty-state"><div class="mark">No solves yet.</div>Be the first to crack a challenge.</div>`;
+    return;
+  }
+  mainView.innerHTML = `
+    <div class="leaderboard">
+      <div class="section-heading"><h2>Standings</h2><p>Ranked by total points earned, top 50.</p></div>
+      ${leaderboard.map((r, i) => `
+        <div class="lb-row ${session && r.user_id === session.user.id ? 'lb-row-me' : ''}">
+          <span class="lb-rank ${i === 0 ? 'top1' : ''}">${i + 1}</span>
+          <div class="avatar">${initials(r.username)}</div>
+          <div class="lb-info">
+            <span class="lb-user">@${escapeHtml(r.username)}</span>
+            <span class="lb-meta">${r.solved_count} solved</span>
+          </div>
+          <span class="lb-score">${r.total_points} pts</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ---------------- data loading ----------------
+async function loadProfile(userId){
+  let { data, error } = await supabase.from('breach-profiles').select('*').eq('id', userId).maybeSingle();
+  if (!data && !error){
+    await new Promise(r => setTimeout(r, 700));
+    ({ data, error } = await supabase.from('breach-profiles').select('*').eq('id', userId).maybeSingle());
+  }
+  profile = data || { id: userId, username: (session.user.email || 'operator').split('@')[0] };
+}
+
+async function loadChallenges(){
+  // id, title, description, category, difficulty, points only — flag/flag_hash is never selected here.
+  const { data, error } = await supabase
+    .from('breach-challenges')
+    .select('id,title,description,category,difficulty,points,created_at')
+    .order('points', { ascending: true });
+  if (error){ console.error(error); return; }
+  challenges = data || [];
+}
+
+async function loadMySolves(){
+  solvesByUser = new Set();
+  myPoints = 0;
+  if (!session) return;
+  const { data, error } = await supabase.from('breach-solves').select('challenge_id').eq('user_id', session.user.id);
+  if (error) return;
+  (data||[]).forEach(s => solvesByUser.add(s.challenge_id));
+  myPoints = challenges.filter(c => solvesByUser.has(c.id)).reduce((sum,c) => sum + c.points, 0);
+}
+
+async function loadSolveCounts(){
+  const { data, error } = await supabase.from('breach-solves').select('challenge_id');
+  solveCounts = {};
+  if (error) return;
+  (data||[]).forEach(s => { solveCounts[s.challenge_id] = (solveCounts[s.challenge_id]||0) + 1; });
+}
+
+async function loadLeaderboard(){
+  const { data, error } = await supabase.from('breach-leaderboard-view').select('*').order('total_points', { ascending: false }).limit(50);
+  if (error) return;
+  leaderboard = data || [];
+}
+
+// ---------------- realtime ----------------
+let channel = null;
+function subscribeRealtime(){
+  if (channel){ supabase.removeChannel(channel); channel = null; }
+  channel = supabase.channel('breach-board')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'breach-solves' }, async () => {
+      await loadSolveCounts();
+      await loadLeaderboard();
+      if (session) await loadMySolves();
+      renderSessionBox();
+      renderMain();
+      renderModal();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'breach-challenges' }, async () => {
+      await loadChallenges();
+      await loadSolveCounts();
+      if (session) await loadMySolves();
+      renderSessionBox();
+      renderMain();
+    })
+    .subscribe();
+}
+
+// ---------------- boot ----------------
+async function refreshAll(){
+  if (session) await loadProfile(session.user.id);
+  else profile = null;
+  await loadChallenges();
+  await loadSolveCounts();
+  await loadMySolves();
+  await loadLeaderboard();
+  renderSessionBox();
+  renderNav();
+  renderAuthPanel();
+  renderMain();
+  renderModal();
+  subscribeRealtime();
+}
+
+supabase.auth.onAuthStateChange((_event, newSession) => { session = newSession; refreshAll(); });
+supabase.auth.getSession().then(({ data }) => { session = data.session; refreshAll(); });
+</script>
+</body>
+</html>

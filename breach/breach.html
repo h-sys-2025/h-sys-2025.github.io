@@ -143,10 +143,35 @@
   .flag-row input:focus{outline:2px solid var(--signal); border-color:var(--signal);}
   .solved-note{display:flex; align-items:center; gap:8px; color:var(--wire-green); font-size:13.5px; font-weight:600; padding:10px 0;}
 
+  /* ---------- profile modal ---------- */
+  .username-link{background:none; border:none; padding:0; color:var(--paper-dim); font-size:13px; font-weight:600; cursor:pointer;}
+  .username-link:hover{color:var(--signal); text-decoration:underline;}
+  .profile-card{max-width:440px;}
+  .profile-top{display:flex; align-items:center; gap:14px; margin-bottom:16px;}
+  .profile-name-block{display:flex; flex-direction:column; min-width:0;}
+  .profile-username{font-family:'Fraunces',serif; font-size:19px; font-weight:600;}
+  .profile-since{font-size:12px; color:var(--paper-dim); margin-top:2px;}
+  .profile-stats-row{display:flex; gap:20px; padding:14px 0; border-top:1px solid var(--hairline); border-bottom:1px solid var(--hairline); margin-bottom:16px;}
+  .profile-stat{display:flex; flex-direction:column; gap:2px;}
+  .profile-stat-val{font-family:'JetBrains Mono',monospace; font-size:17px; color:var(--signal); font-weight:600;}
+  .profile-stat-label{font-size:11px; color:var(--paper-dim); text-transform:uppercase; letter-spacing:0.04em;}
+  .profile-bio{font-size:13.5px; line-height:1.5; color:var(--paper); margin-bottom:16px; white-space:pre-wrap;}
+  .profile-bio.empty{color:var(--paper-dim); font-style:italic;}
+  .solved-list{display:flex; flex-direction:column; max-height:320px; overflow-y:auto; margin-top:4px;}
+  .solved-row{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--hairline);}
+  .solved-row:last-child{border-bottom:none;}
+  .solved-row-main{flex:1; min-width:0; display:flex; flex-direction:column;}
+  .solved-row-title{font-size:13.5px; font-weight:600;}
+  .solved-row-meta{font-size:11px; color:var(--paper-dim); margin-top:1px;}
+  .solved-row-pts{font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--signal); flex-shrink:0;}
+  .profile-actions{display:flex; gap:10px; margin-top:6px;}
+
   /* ---------- leaderboard ---------- */
   .leaderboard{padding-bottom:8px;}
-  .lb-row{display:flex; align-items:center; gap:14px; padding:14px 24px; border-bottom:1px solid var(--hairline);}
+  .lb-row{display:flex; align-items:center; gap:14px; padding:14px 24px; border-bottom:1px solid var(--hairline); cursor:pointer;}
+  .lb-row:hover{background:var(--ink-2);}
   .lb-row-me{background:var(--signal-dim);}
+  .lb-row-me:hover{background:var(--signal-dim);}
   .lb-rank{font-family:'Fraunces',serif; font-weight:600; font-size:16px; color:var(--paper-dim); width:24px; text-align:right; flex-shrink:0;}
   .lb-rank.top1{color:var(--signal);}
   .avatar{width:40px;height:40px;border-radius:50%;background:var(--ink-2);border:1px solid var(--hairline-strong);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:600;font-size:15px;color:var(--signal);flex-shrink:0;}
@@ -228,6 +253,13 @@ let flagInput = '';
 let flagBusy = false;
 let flagMsg = null;
 
+let openProfile = null;      // { id } of the profile currently open in the modal, or null
+let profileDetail = null;    // loaded { profile, stats, solves } for openProfile
+let profileEditMode = false;
+let profileDraft = { username: '', bio: '' };
+let profileEditBusy = false;
+let profileEditMsg = null;
+
 // ---------------- dom refs ----------------
 const sessionBox = document.getElementById('sessionBox');
 const navTabs = document.getElementById('navTabs');
@@ -237,6 +269,14 @@ const modalRoot = document.getElementById('modalRoot');
 
 function initials(name){ return (name || '?').slice(0,2).toUpperCase(); }
 function escapeHtml(str){ const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
+function timeAgo(iso){
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  if (diff < 604800) return Math.floor(diff/86400) + 'd ago';
+  return new Date(iso).toLocaleDateString(undefined, { month:'short', day:'numeric' });
+}
 function celebrate(){
   confetti({ particleCount: 90, spread: 75, startVelocity: 45, origin: { y: 0.25 }, colors: ['#E8A33D', '#6FA88A', '#EDEAA3', '#EDEAE3'] });
 }
@@ -244,7 +284,8 @@ function celebrate(){
 // ---------------- session / nav ----------------
 function renderSessionBox(){
   if (session && profile){
-    sessionBox.innerHTML = `<span class="pts-pill">⚡ ${myPoints} pts</span><span class="btn-link" style="color:var(--paper-dim); cursor:default;">@${escapeHtml(profile.username)}</span><button class="btn-link" id="signOutBtn">sign off</button>`;
+    sessionBox.innerHTML = `<span class="pts-pill">⚡ ${myPoints} pts</span><button class="username-link" id="myProfileBtn">@${escapeHtml(profile.username)}</button><button class="btn-link" id="signOutBtn">sign off</button>`;
+    document.getElementById('myProfileBtn').onclick = () => openProfileModal(session.user.id);
     document.getElementById('signOutBtn').onclick = async () => { await supabase.auth.signOut(); };
   } else {
     sessionBox.innerHTML = '';
@@ -353,6 +394,7 @@ function challengeCardHtml(c){
 
 // ---------------- challenge modal ----------------
 function openChallengeModal(id){
+  openProfile = null; profileDetail = null; profileEditMode = false;
   openChallenge = challenges.find(c => c.id === id) || null;
   flagInput = ''; flagMsg = null; flagBusy = false;
   renderModal();
@@ -360,7 +402,12 @@ function openChallengeModal(id){
 function closeModal(){ openChallenge = null; renderModal(); }
 
 function renderModal(){
-  if (!openChallenge){ modalRoot.innerHTML = ''; return; }
+  if (openProfile) return renderProfileModal();
+  if (openChallenge) return renderChallengeModal();
+  modalRoot.innerHTML = '';
+}
+
+function renderChallengeModal(){
   const c = openChallenge;
   const solved = solvesByUser.has(c.id);
   modalRoot.innerHTML = `
@@ -437,6 +484,180 @@ async function submitFlag(){
   renderModal();
 }
 
+// ---------------- profile modal ----------------
+function openProfileModal(userId){
+  openChallenge = null; // only one modal on screen at a time
+  openProfile = { id: userId };
+  profileDetail = null;
+  profileEditMode = false;
+  profileEditMsg = null;
+  renderModal();
+  loadProfileDetail(userId).then(detail => {
+    // ignore a stale response if the user opened a different profile in the meantime
+    if (!openProfile || openProfile.id !== userId) return;
+    profileDetail = detail;
+    profileDraft = { username: detail.profile?.username || '', bio: detail.profile?.bio || '' };
+    renderModal();
+  });
+}
+function closeProfileModal(){ openProfile = null; profileDetail = null; profileEditMode = false; renderModal(); }
+
+function renderProfileModal(){
+  const isSelf = session && openProfile.id === session.user.id;
+  if (!profileDetail){
+    modalRoot.innerHTML = `
+      <div class="modal-overlay" id="profileOverlay">
+        <div class="modal-card profile-card">
+          <div class="modal-head"><h2>Loading…</h2><button class="btn-link" id="closeProfileBtn">close</button></div>
+        </div>
+      </div>
+    `;
+    document.getElementById('closeProfileBtn').onclick = closeProfileModal;
+    document.getElementById('profileOverlay').addEventListener('click', (e) => { if (e.target.id === 'profileOverlay') closeProfileModal(); });
+    return;
+  }
+
+  const p = profileDetail.profile;
+  if (!p){
+    modalRoot.innerHTML = `
+      <div class="modal-overlay" id="profileOverlay">
+        <div class="modal-card profile-card">
+          <div class="modal-head"><h2>Not found</h2><button class="btn-link" id="closeProfileBtn">close</button></div>
+          <p class="modal-desc">This profile doesn't exist.</p>
+        </div>
+      </div>
+    `;
+    document.getElementById('closeProfileBtn').onclick = closeProfileModal;
+    document.getElementById('profileOverlay').addEventListener('click', (e) => { if (e.target.id === 'profileOverlay') closeProfileModal(); });
+    return;
+  }
+
+  const stats = profileDetail.stats || { solved_count: 0, total_points: 0 };
+  const memberSince = p.created_at ? new Date(p.created_at).toLocaleDateString(undefined, { month:'short', year:'numeric' }) : '';
+
+  const editSection = isSelf && profileEditMode
+    ? `
+      ${profileEditMsg ? `<div class="auth-msg ${profileEditMsg.type}">${escapeHtml(profileEditMsg.text)}</div>` : ''}
+      <div class="field"><label for="editUsername">username</label><input id="editUsername" value="${escapeHtml(profileDraft.username)}" maxlength="30" /></div>
+      <div class="field"><label for="editBio">bio</label><textarea id="editBio" maxlength="160" rows="3">${escapeHtml(profileDraft.bio)}</textarea></div>
+      <div class="profile-actions">
+        <button class="primary-btn" id="saveProfileBtn" ${profileEditBusy ? 'disabled' : ''}>${profileEditBusy ? 'saving…' : 'Save changes'}</button>
+        <button class="secondary-btn" id="cancelEditBtn">Cancel</button>
+      </div>
+    `
+    : `
+      <p class="profile-bio ${p.bio ? '' : 'empty'}">${p.bio ? escapeHtml(p.bio) : 'No bio yet.'}</p>
+      ${isSelf ? `<button class="secondary-btn" id="editProfileBtn" style="margin-bottom:16px;">Edit profile</button>` : ''}
+    `;
+
+  const solvesHtml = profileDetail.solves.length
+    ? `<div class="solved-list">${profileDetail.solves.map(s => `
+        <div class="solved-row">
+          <div class="solved-row-main">
+            <span class="solved-row-title">${escapeHtml(s.title)}</span>
+            <span class="solved-row-meta">${escapeHtml(s.category)} · ${timeAgo(s.solved_at)}</span>
+          </div>
+          <span class="solved-row-pts">${s.points} pts</span>
+        </div>
+      `).join('')}</div>`
+    : `<div class="empty-state" style="padding:24px 0;">No solves yet.</div>`;
+
+  modalRoot.innerHTML = `
+    <div class="modal-overlay" id="profileOverlay">
+      <div class="modal-card profile-card">
+        <div class="modal-head">
+          <h2>Profile</h2>
+          <button class="btn-link" id="closeProfileBtn">close</button>
+        </div>
+        <div class="profile-top">
+          <div class="avatar avatar-lg" style="width:56px;height:56px;font-size:20px;">${initials(p.username)}</div>
+          <div class="profile-name-block">
+            <span class="profile-username">@${escapeHtml(p.username)}</span>
+            ${memberSince ? `<span class="profile-since">on the wire since ${memberSince}</span>` : ''}
+          </div>
+        </div>
+        <div class="profile-stats-row">
+          <div class="profile-stat"><span class="profile-stat-val">${stats.total_points}</span><span class="profile-stat-label">points</span></div>
+          <div class="profile-stat"><span class="profile-stat-val">${stats.solved_count}</span><span class="profile-stat-label">solved</span></div>
+        </div>
+        ${editSection}
+        <div class="section-heading" style="padding:0 0 6px;"><h2>Solved challenges</h2></div>
+        ${solvesHtml}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('closeProfileBtn').onclick = closeProfileModal;
+  document.getElementById('profileOverlay').addEventListener('click', (e) => { if (e.target.id === 'profileOverlay') closeProfileModal(); });
+
+  const editBtn = document.getElementById('editProfileBtn');
+  if (editBtn) editBtn.onclick = () => { profileEditMode = true; profileEditMsg = null; renderModal(); };
+
+  const cancelBtn = document.getElementById('cancelEditBtn');
+  if (cancelBtn) cancelBtn.onclick = () => {
+    profileEditMode = false; profileEditMsg = null;
+    profileDraft = { username: p.username, bio: p.bio || '' };
+    renderModal();
+  };
+
+  const saveBtn = document.getElementById('saveProfileBtn');
+  if (saveBtn) saveBtn.onclick = async () => {
+    const newUsername = document.getElementById('editUsername').value.trim();
+    const newBio = document.getElementById('editBio').value.trim();
+    if (!/^[a-zA-Z0-9_-]{3,30}$/.test(newUsername)){
+      profileEditMsg = { type:'error', text: 'Usernames need 3–30 letters, numbers, underscores, or hyphens.' };
+      renderModal();
+      return;
+    }
+    profileEditBusy = true; profileEditMsg = null; renderModal();
+    const { data, error } = await supabase
+      .from('breach-profiles')
+      .update({ username: newUsername, bio: newBio })
+      .eq('id', session.user.id)
+      .select()
+      .maybeSingle();
+    profileEditBusy = false;
+    if (error){
+      profileEditMsg = { type:'error', text: error.code === '23505' ? 'That username is already taken.' : error.message };
+      renderModal();
+      return;
+    }
+    profileDetail.profile = data;
+    profile = data; // keep the header in sync too
+    profileEditMode = false;
+    renderSessionBox();
+    renderMain();
+    renderModal();
+  };
+}
+
+async function loadProfileDetail(userId){
+  const [{ data: profRow }, { data: solveRows }, { data: lbRow }] = await Promise.all([
+    supabase.from('breach-profiles').select('id,username,bio,created_at').eq('id', userId).maybeSingle(),
+    supabase.from('breach-solves').select('challenge_id,solved_at').eq('user_id', userId).order('solved_at', { ascending: false }),
+    supabase.from('breach-leaderboard-view').select('*').eq('user_id', userId).maybeSingle()
+  ]);
+
+  const challengeIds = [...new Set((solveRows || []).map(s => s.challenge_id))];
+  let challengeMap = {};
+  if (challengeIds.length){
+    const { data: chalRows } = await supabase
+      .from('breach-challenges')
+      .select('id,title,category,points')
+      .in('id', challengeIds);
+    (chalRows || []).forEach(c => { challengeMap[c.id] = c; });
+  }
+  const solves = (solveRows || [])
+    .filter(s => challengeMap[s.challenge_id]) // drop any orphaned solve rows gracefully
+    .map(s => ({ ...challengeMap[s.challenge_id], solved_at: s.solved_at }));
+
+  return {
+    profile: profRow || null,
+    stats: lbRow || { solved_count: 0, total_points: 0 },
+    solves
+  };
+}
+
 // ---------------- leaderboard ----------------
 function renderLeaderboardView(){
   if (!leaderboard.length){
@@ -445,9 +666,9 @@ function renderLeaderboardView(){
   }
   mainView.innerHTML = `
     <div class="leaderboard">
-      <div class="section-heading"><h2>Standings</h2><p>Ranked by total points earned, top 50.</p></div>
+      <div class="section-heading"><h2>Standings</h2><p>Ranked by total points earned, top 50. Tap anyone to see their solves.</p></div>
       ${leaderboard.map((r, i) => `
-        <div class="lb-row ${session && r.user_id === session.user.id ? 'lb-row-me' : ''}">
+        <div class="lb-row ${session && r.user_id === session.user.id ? 'lb-row-me' : ''}" data-profile="${r.user_id}">
           <span class="lb-rank ${i === 0 ? 'top1' : ''}">${i + 1}</span>
           <div class="avatar">${initials(r.username)}</div>
           <div class="lb-info">
@@ -459,6 +680,9 @@ function renderLeaderboardView(){
       `).join('')}
     </div>
   `;
+  mainView.querySelectorAll('[data-profile]').forEach(row => {
+    row.onclick = () => openProfileModal(row.getAttribute('data-profile'));
+  });
 }
 
 // ---------------- data loading ----------------
@@ -468,7 +692,23 @@ async function loadProfile(userId){
     await new Promise(r => setTimeout(r, 700));
     ({ data, error } = await supabase.from('breach-profiles').select('*').eq('id', userId).maybeSingle());
   }
-  profile = data || { id: userId, username: (session.user.email || 'operator').split('@')[0] };
+  if (!data){
+    // This is the actual fix for "leaderboard doesn't show usernames": the old
+    // fallback only kept a made-up username in local memory and never wrote it
+    // to breach-profiles. Since the leaderboard view is built FROM that table,
+    // any account whose row was never created by the "breach-on-auth-user-created"
+    // trigger (e.g. accounts created before that trigger existed) never showed up
+    // with a real name. Now we write the row ourselves so it's there for good.
+    const fallbackUsername = ((session.user.email || 'operator').split('@')[0] + '-' + userId.slice(0, 4))
+      .toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 30) || ('operator-' + userId.slice(0, 4));
+    const { data: inserted, error: insertErr } = await supabase
+      .from('breach-profiles')
+      .upsert({ id: userId, username: fallbackUsername }, { onConflict: 'id' })
+      .select()
+      .maybeSingle();
+    data = inserted || { id: userId, username: fallbackUsername };
+  }
+  profile = data;
 }
 
 async function loadChallenges(){
